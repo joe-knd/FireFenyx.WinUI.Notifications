@@ -1,0 +1,21 @@
+<Project>
+  <PropertyGroup>
+    <Company>Joe-Knd</Company>
+    <Authors>Jose Valencia</Authors>
+    <RepositoryUrl>https://github.com/joe-knd/FireFenyx.WinUI.Notifications</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageProjectUrl>https://github.com/joe-knd/FireFenyx.WinUI.Notifications</PackageProjectUrl>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <PackageOutputPath>$(MSBuildThisFileDirectory)..\artifacts\packages</PackageOutputPath>
+
+    <Version>1.0.0</Version>
+    <PackageId>FireFenyx.WinUI.Notifications</PackageId>
+    <Description>In-app notification host and service for WinUI 3 (floating InfoBar with severity, queueing, and theming).</Description>
+    <PackageTags>winui;notifications;infobar;toast;snackbar</PackageTags>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+  </PropertyGroup>
+</Project>

@@ -1,0 +1,10 @@
+<Project>
+  <Target Name="CopyReadmeToPackage" AfterTargets="Pack">
+    <ItemGroup>
+      <_ReadmeFile Include="$(MSBuildThisFileDirectory)..\README.md" />
+    </ItemGroup>
+    <Copy SourceFiles="@(_ReadmeFile)"
+          DestinationFolder="$(PackageOutputPath)" />
+  </Target>
+</Project>
+  
