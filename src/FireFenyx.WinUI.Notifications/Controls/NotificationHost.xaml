@@ -17,36 +17,10 @@
     <Grid x:Name="Overlay"
           IsHitTestVisible="False">
 
-        <Grid x:Name="ToastContainer"
-              HorizontalAlignment="Center"
-              VerticalAlignment="Bottom"
-              Margin="0,0,0,24"
-              Opacity="0"
-              RenderTransformOrigin="0.5,1">
-
-            <Grid.RenderTransform>
-                <TranslateTransform Y="40"/>
-            </Grid.RenderTransform>
-
-            <InfoBar x:Name="ToastBar"
-                     IsOpen="True"
-                     IsClosable="True"
-                     Width="420"
-                     CornerRadius="6"
-                     Background="{ThemeResource NotificationSolidBrush}"
-                     Foreground="{ThemeResource NotificationForegroundBrush}"
-                     IsHitTestVisible="True">
-
-                <StackPanel>
-                    <TextBlock x:Name="MessageText"
-                               TextWrapping="Wrap" />
-
-                    <ProgressBar x:Name="ProgressBar"
-                                 Height="4"
-                                 Margin="0,8,0,0"
-                                 Visibility="Collapsed" />
-                </StackPanel>
-            </InfoBar>
-        </Grid>
+        <StackPanel x:Name="Stack"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Bottom"
+                    Margin="0,0,0,24"
+                    Spacing="8" />
     </Grid>
 </UserControl>

@@ -25,7 +25,7 @@
         <!-- Notification Host -->
         <notifications:NotificationHost
             x:Name="Notifications"
-            notifySvc:NotificationHostService.Queue="{x:Bind ViewModel.NotificationQueue, Mode=OneWay}" />
+            notifySvc:NotificationHostService.Queue="{x:Bind ViewModel.NotificationQueue, Mode=OneTime}" />
 
 
     </Grid>

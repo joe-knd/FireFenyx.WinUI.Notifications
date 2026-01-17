@@ -4,6 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace FureFenyx.WinUI.Notifications.SampleApp.ViewModels;
 
@@ -29,12 +30,17 @@ public class MainViewModel
 
     public void ShowProgress()
     {
-        _notifications.Show(new NotificationRequest
+        var handle = _notifications.ShowProgress("Uploading...", durationMs: 1500, progress: 0);
+
+        _ = Task.Run(async () =>
         {
-            Message = "Uploading...",
-            Level = NotificationLevel.Info,
-            IsInProgress = true,
-            Progress = 42
+            for (var i = 0; i <= 100; i += 10)
+            {
+                handle.Report(i, $"Uploading... {i}%");
+                await Task.Delay(500);
+            }
+
+            handle.Complete("Upload completed!");
         });
     }
 

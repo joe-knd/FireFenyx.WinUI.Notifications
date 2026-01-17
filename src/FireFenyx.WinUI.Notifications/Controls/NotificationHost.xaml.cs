@@ -6,6 +6,7 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
 using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -20,7 +21,26 @@ namespace FireFenyx.WinUI.Notifications.Controls;
 public sealed partial class NotificationHost : UserControl
 {
     private readonly SemaphoreSlim _transitionGate = new(1, 1);
-    private CancellationTokenSource? _dismissCts;
+    private sealed class NotificationVisual
+    {
+        public NotificationVisual(Guid id, Grid container, InfoBar bar, TextBlock messageText, Microsoft.UI.Xaml.Controls.ProgressBar progressBar)
+        {
+            Id = id;
+            Container = container;
+            Bar = bar;
+            MessageText = messageText;
+            ProgressBar = progressBar;
+        }
+
+        public Guid Id { get; }
+        public Grid Container { get; }
+        public InfoBar Bar { get; }
+        public TextBlock MessageText { get; }
+        public Microsoft.UI.Xaml.Controls.ProgressBar ProgressBar { get; }
+        public CancellationTokenSource? DismissCts { get; set; }
+    }
+
+    private readonly Dictionary<Guid, NotificationVisual> _visuals = new();
 
     /// <summary>
     /// Initializes a new instance of the <see cref="NotificationHost"/> control.
@@ -37,91 +57,24 @@ public sealed partial class NotificationHost : UserControl
     /// <returns>A task that completes when the notification has been shown and (optionally) dismissed.</returns>
     public async Task ShowAsync(NotificationRequest request)
     {
-        CancellationTokenSource dismissCts;
-
         await _transitionGate.WaitAsync().ConfigureAwait(true);
         try
         {
-            _dismissCts?.Cancel();
-            _dismissCts?.Dispose();
-            _dismissCts = new CancellationTokenSource();
-            dismissCts = _dismissCts;
-
-            ApplyLevel(request.Level);
-            ApplyMaterial(request.Material);
-
-            MessageText.Text = request.Message;
-
-            if (request.IsInProgress)
+            if (!_visuals.TryGetValue(request.Id, out var visual))
             {
-                ProgressBar.Visibility = Visibility.Visible;
-                ProgressBar.IsIndeterminate = request.Progress < 0;
-                if (request.Progress >= 0)
-                    ProgressBar.Value = request.Progress;
-            }
-            else
-            {
-                ProgressBar.Visibility = Visibility.Collapsed;
+                visual = CreateVisual(request.Id);
+                _visuals.Add(request.Id, visual);
+                Stack.Children.Add(visual.Container);
             }
 
-            ToastBar.CloseButtonClick -= OnClose;
-            ToastBar.CloseButtonClick += OnClose;
+            ApplyRequestToVisual(visual, request);
 
-            await AnimateIn(request.Transition);
-        }
-        finally
-        {
-            _transitionGate.Release();
-        }
-
-        if (request.DurationMs > 0)
-        {
-            try
+            if (!request.IsUpdate)
             {
-                await Task.Delay(request.DurationMs, dismissCts.Token);
-            }
-            catch (OperationCanceledException)
-            {
-                // dismissed manually or replaced by a new notification
+                await AnimateIn(visual, request.Transition);
             }
 
-            await _transitionGate.WaitAsync().ConfigureAwait(true);
-            try
-            {
-                if (!dismissCts.IsCancellationRequested)
-                {
-                    await AnimateOut(request.Transition);
-                }
-            }
-            finally
-            {
-                _transitionGate.Release();
-            }
-        }
-    }
-
-    /// <summary>
-    /// Handles the InfoBar close button click.
-    /// </summary>
-    /// <param name="sender">The InfoBar that raised the event.</param>
-    /// <param name="args">Event arguments.</param>
-    private void OnClose(InfoBar sender, object args)
-    {
-        // Cancel any pending auto-dismiss and run one serialized dismiss animation.
-        _dismissCts?.Cancel();
-        _ = DismissAsync();
-    }
-
-    /// <summary>
-    /// Dismisses the current notification with an exit animation.
-    /// </summary>
-    /// <returns>A task that completes once the dismissal animation finishes.</returns>
-    private async Task DismissAsync()
-    {
-        await _transitionGate.WaitAsync().ConfigureAwait(true);
-        try
-        {
-            await AnimateOut(NotificationTransition.SlideAndFade);
+            RestartDismissTimer(visual, request);
         }
         finally
         {
@@ -129,13 +82,138 @@ public sealed partial class NotificationHost : UserControl
         }
     }
 
-    /// <summary>
-    /// Applies visual severity based on the requested notification level.
-    /// </summary>
-    /// <param name="level">The notification level.</param>
-    private void ApplyLevel(NotificationLevel level)
+    // NOTE: Per-toast close handling is wired in CreateVisual.
+
+    private NotificationVisual CreateVisual(Guid id)
     {
-        ToastBar.Severity = level switch
+        var container = new Grid
+        {
+            Opacity = 0,
+            RenderTransformOrigin = new Windows.Foundation.Point(0.5, 1),
+            RenderTransform = new TranslateTransform { Y = 40 }
+        };
+
+        var bar = new InfoBar
+        {
+            IsOpen = true,
+            IsClosable = true,
+            Width = 420,
+            CornerRadius = new CornerRadius(6),
+            IsHitTestVisible = true
+        };
+
+        var message = new TextBlock { TextWrapping = TextWrapping.Wrap };
+        var progress = new Microsoft.UI.Xaml.Controls.ProgressBar
+        {
+            Height = 4,
+            Margin = new Thickness(0, 8, 0, 0),
+            Visibility = Visibility.Collapsed
+        };
+
+        var stack = new StackPanel();
+        stack.Children.Add(message);
+        stack.Children.Add(progress);
+        bar.Content = stack;
+
+        bar.CloseButtonClick += (_, __) => CloseClicked(id);
+
+        container.Children.Add(bar);
+
+        return new NotificationVisual(id, container, bar, message, progress);
+    }
+
+    private void CloseClicked(Guid id)
+        => _ = DismissAsync(id, NotificationTransition.SlideAndFade);
+
+    private void ApplyRequestToVisual(NotificationVisual visual, NotificationRequest request)
+    {
+        Overlay.IsHitTestVisible = _visuals.Count > 0;
+
+        ApplyLevel(visual, request.Level);
+        ApplyMaterial(visual, request.Material);
+
+        if (!string.IsNullOrWhiteSpace(request.Message))
+        {
+            visual.MessageText.Text = request.Message;
+        }
+
+        if (request.IsInProgress)
+        {
+            visual.ProgressBar.Visibility = Visibility.Visible;
+            visual.ProgressBar.IsIndeterminate = request.Progress < 0;
+            if (request.Progress >= 0)
+            {
+                visual.ProgressBar.Value = request.Progress;
+            }
+        }
+        else
+        {
+            visual.ProgressBar.Visibility = Visibility.Collapsed;
+        }
+
+        visual.Bar.IsOpen = true;
+    }
+
+    private void RestartDismissTimer(NotificationVisual visual, NotificationRequest request)
+    {
+        if (request.DurationMs <= 0)
+        {
+            visual.DismissCts?.Cancel();
+            return;
+        }
+
+        visual.DismissCts?.Cancel();
+        visual.DismissCts?.Dispose();
+        visual.DismissCts = new CancellationTokenSource();
+
+        var token = visual.DismissCts.Token;
+        _ = DismissAfterDelayAsync(visual.Id, request.Transition, request.DurationMs, token);
+    }
+
+    private async Task DismissAfterDelayAsync(Guid id, NotificationTransition transition, int durationMs, CancellationToken token)
+    {
+        try
+        {
+            await Task.Delay(durationMs, token).ConfigureAwait(true);
+        }
+        catch (OperationCanceledException)
+        {
+            return;
+        }
+
+        await DismissAsync(id, transition).ConfigureAwait(true);
+    }
+
+    private async Task DismissAsync(Guid id, NotificationTransition transition)
+    {
+        await _transitionGate.WaitAsync().ConfigureAwait(true);
+        try
+        {
+            if (!_visuals.TryGetValue(id, out var visual))
+            {
+                return;
+            }
+
+            visual.DismissCts?.Cancel();
+            visual.DismissCts?.Dispose();
+            visual.DismissCts = null;
+
+            await AnimateOut(visual, transition);
+
+            Stack.Children.Remove(visual.Container);
+            _visuals.Remove(id);
+
+            Overlay.IsHitTestVisible = _visuals.Count > 0;
+        }
+        finally
+        {
+            _transitionGate.Release();
+        }
+    }
+
+    private static void ApplyLevel(NotificationVisual visual, NotificationLevel level)
+    {
+        visual.Bar.Severity = level switch
         {
             NotificationLevel.Success => InfoBarSeverity.Success,
             NotificationLevel.Info => InfoBarSeverity.Informational,
@@ -145,11 +223,7 @@ public sealed partial class NotificationHost : UserControl
         };
     }
 
-    /// <summary>
-    /// Applies the requested background material (solid, acrylic, mica) to the toast.
-    /// </summary>
-    /// <param name="material">The desired material.</param>
-    private void ApplyMaterial(NotificationMaterial material)
+    private static void ApplyMaterial(NotificationVisual visual, NotificationMaterial material)
     {
         var key = material switch
         {
@@ -159,79 +233,62 @@ public sealed partial class NotificationHost : UserControl
         };
 
         if (Application.Current.Resources.TryGetValue(key, out var brush))
-            ToastBar.Background = (Brush)brush;
+        {
+            visual.Bar.Background = (Brush)brush;
+        }
     }
 
-    /// <summary>
-    /// Plays the entry animation for the toast.
-    /// </summary>
-    /// <param name="transition">The transition to use.</param>
-    /// <returns>A task representing the asynchronous animation.</returns>
-    private async Task AnimateIn(NotificationTransition transition)
+    private async Task AnimateIn(NotificationVisual visual, NotificationTransition transition)
     {
-        Overlay.IsHitTestVisible = true;
-
-        // If the user closed the InfoBar previously, it will remain closed unless reopened.
-        ToastBar.IsOpen = true;
-
         switch (transition)
         {
             case NotificationTransition.Fade:
-                await ToastContainer.Fade(1, 250);
+                await visual.Container.Fade(1, 250);
                 break;
 
             case NotificationTransition.Scale:
-                await ToastContainer.Scale(1.0, 250);
+                await visual.Container.Scale(1.0, 250);
                 break;
 
             case NotificationTransition.SlideAndFade:
                 await Task.WhenAll(
-                    ToastContainer.RenderTransform.AnimateY(0, 300),
-                    ToastContainer.Fade(1, 300));
+                    visual.Container.RenderTransform.AnimateY(0, 300),
+                    visual.Container.Fade(1, 300));
                 break;
 
             default: // SlideUp
-                ToastContainer.Opacity = 1;
-                await ToastContainer.RenderTransform.AnimateY(0, 300);
+                visual.Container.Opacity = 1;
+                await visual.Container.RenderTransform.AnimateY(0, 300);
                 break;
         }
     }
 
-    /// <summary>
-    /// Plays the exit animation for the toast and disables the overlay.
-    /// </summary>
-    /// <param name="transition">The transition to use.</param>
-    /// <returns>A task representing the asynchronous animation.</returns>
-    private async Task AnimateOut(NotificationTransition transition)
+    private async Task AnimateOut(NotificationVisual visual, NotificationTransition transition)
     {
-        // Ensure the InfoBar is closed when we animate out, regardless of whether the user
-        // clicked the close button or we timed out.
-        ToastBar.IsOpen = false;
+        visual.Bar.IsOpen = false;
 
         switch (transition)
         {
             case NotificationTransition.Fade:
-                await ToastContainer.Fade(0, 200);
+                await visual.Container.Fade(0, 200);
                 break;
 
             case NotificationTransition.Scale:
-                await ToastContainer.Scale(0.8, 200);
-                await ToastContainer.Fade(0, 200);
+                await visual.Container.Scale(0.8, 200);
+                await visual.Container.Fade(0, 200);
                 break;
 
             case NotificationTransition.SlideAndFade:
                 await Task.WhenAll(
-                    ToastContainer.RenderTransform.AnimateY(40, 250),
-                    ToastContainer.Fade(0, 250));
+                    visual.Container.RenderTransform.AnimateY(40, 250),
+                    visual.Container.Fade(0, 250));
                 break;
 
             default: // SlideUp reverse
-                await ToastContainer.RenderTransform.AnimateY(40, 250);
-                ToastContainer.Opacity = 0;
+                await visual.Container.RenderTransform.AnimateY(40, 250);
+                visual.Container.Opacity = 0;
                 break;
         }
-
-        Overlay.IsHitTestVisible = false;
     }
 
 }
