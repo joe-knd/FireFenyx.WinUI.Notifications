@@ -1,7 +1,5 @@
 using FireFenyx.WinUI.Notifications.Extensions;
 using FireFenyx.WinUI.Notifications.Models;
-using FireFenyx.WinUI.Notifications.Services;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
