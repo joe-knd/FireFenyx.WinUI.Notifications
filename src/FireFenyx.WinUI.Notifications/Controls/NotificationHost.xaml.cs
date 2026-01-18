@@ -18,6 +18,47 @@ namespace FireFenyx.WinUI.Notifications.Controls;
 /// </summary>
 public sealed partial class NotificationHost : UserControl
 {
+    /// <summary>
+    /// Defines where notifications should appear within the host.
+    /// </summary>
+    public enum NotificationHostPosition
+    {
+        /// <summary>
+        /// Notifications are stacked from the bottom.
+        /// </summary>
+        Bottom,
+
+        /// <summary>
+        /// Notifications are stacked from the top.
+        /// </summary>
+        Top
+    }
+
+    /// <summary>
+    /// Identifies the <see cref="HostPosition"/> dependency property.
+    /// </summary>
+    public static readonly DependencyProperty HostPositionProperty =
+        DependencyProperty.Register(
+            nameof(HostPosition),
+            typeof(NotificationHostPosition),
+            typeof(NotificationHost),
+            new PropertyMetadata(NotificationHostPosition.Bottom, OnHostPositionChanged));
+
+    /// <summary>
+    /// Gets or sets where notifications should appear within the host.
+    /// </summary>
+    public NotificationHostPosition HostPosition
+    {
+        get => (NotificationHostPosition)GetValue(HostPositionProperty);
+        set => SetValue(HostPositionProperty, value);
+    }
+
+    internal VerticalAlignment HostVerticalAlignment
+        => HostPosition == NotificationHostPosition.Top ? VerticalAlignment.Top : VerticalAlignment.Bottom;
+
+    internal Thickness HostMargin
+        => HostPosition == NotificationHostPosition.Top ? new Thickness(0, 24, 0, 0) : new Thickness(0, 0, 0, 24);
+
     private readonly SemaphoreSlim _transitionGate = new(1, 1);
     private sealed class NotificationVisual
     {
@@ -48,6 +89,15 @@ public sealed partial class NotificationHost : UserControl
         InitializeComponent();
     }
 
+    private static void OnHostPositionChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+    {
+        if (d is NotificationHost host)
+        {
+            // Force x:Bind reevaluation.
+            host.Bindings.Update();
+        }
+    }
+
     /// <summary>
     /// Displays a notification request within this host.
     /// </summary>
@@ -58,11 +108,25 @@ public sealed partial class NotificationHost : UserControl
         await _transitionGate.WaitAsync().ConfigureAwait(true);
         try
         {
+            if (request.IsUpdate && request.DurationMs == 1 && string.IsNullOrEmpty(request.Message))
+            {
+                await DismissAsync(request.Id, request.Transition);
+                return;
+            }
+
             if (!_visuals.TryGetValue(request.Id, out var visual))
             {
                 visual = CreateVisual(request.Id);
                 _visuals.Add(request.Id, visual);
-                Stack.Children.Add(visual.Container);
+                // When positioned at the top, insert newest notifications at the top of the stack.
+                if (HostPosition == NotificationHostPosition.Top)
+                {
+                    Stack.Children.Insert(0, visual.Container);
+                }
+                else
+                {
+                    Stack.Children.Add(visual.Container);
+                }
             }
 
             ApplyRequestToVisual(visual, request);
@@ -84,11 +148,12 @@ public sealed partial class NotificationHost : UserControl
 
     private NotificationVisual CreateVisual(Guid id)
     {
+        var initialOffset = HostPosition == NotificationHostPosition.Top ? -40 : 40;
         var container = new Grid
         {
             Opacity = 0,
             RenderTransformOrigin = new Windows.Foundation.Point(0.5, 1),
-            RenderTransform = new TranslateTransform { Y = 40 }
+            RenderTransform = new TranslateTransform { Y = initialOffset }
         };
 
         var bar = new InfoBar
@@ -149,6 +214,7 @@ public sealed partial class NotificationHost : UserControl
             visual.ProgressBar.Visibility = Visibility.Collapsed;
         }
 
+        visual.Bar.IsClosable = request.IsClosable;
         visual.Bar.IsOpen = true;
     }
 
@@ -157,6 +223,8 @@ public sealed partial class NotificationHost : UserControl
         if (request.DurationMs <= 0)
         {
             visual.DismissCts?.Cancel();
+            visual.DismissCts?.Dispose();
+            visual.DismissCts = null;
             return;
         }
 
@@ -265,6 +333,8 @@ public sealed partial class NotificationHost : UserControl
     {
         visual.Bar.IsOpen = false;
 
+        var exitOffset = HostPosition == NotificationHostPosition.Top ? -40 : 40;
+
         switch (transition)
         {
             case NotificationTransition.Fade:
@@ -278,12 +348,12 @@ public sealed partial class NotificationHost : UserControl
 
             case NotificationTransition.SlideAndFade:
                 await Task.WhenAll(
-                    visual.Container.RenderTransform.AnimateY(40, 250),
+                    visual.Container.RenderTransform.AnimateY(exitOffset, 250),
                     visual.Container.Fade(0, 250));
                 break;
 
             default: // SlideUp reverse
-                await visual.Container.RenderTransform.AnimateY(40, 250);
+                await visual.Container.RenderTransform.AnimateY(exitOffset, 250);
                 visual.Container.Opacity = 0;
                 break;
         }

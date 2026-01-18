@@ -23,9 +23,15 @@ public sealed class NotificationRequest
     public NotificationLevel Level { get; init; } = NotificationLevel.Info;
 
     /// <summary>
-    /// Gets the auto-dismiss duration in milliseconds.
+    /// Gets the auto-dismiss duration in milliseconds. Specify <c>0</c> or a negative value
+    /// to keep the notification visible until updated or dismissed programmatically.
     /// </summary>
     public int DurationMs { get; init; } = 3000;
+
+    /// <summary>
+    /// Gets whether the notification can be dismissed by the user.
+    /// </summary>
+    public bool IsClosable { get; init; } = true;
 
     /// <summary>
     /// Gets optional action button text.

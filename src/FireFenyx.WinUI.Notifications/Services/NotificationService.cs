@@ -93,6 +93,22 @@ public sealed class NotificationService : INotificationService
             DurationMs = durationMs
         });
 
+    /// <inheritdoc />
+    public IPersistentNotification ShowPersistent(string message, NotificationLevel level = NotificationLevel.Info, bool isClosable = false)
+    {
+        var id = Guid.NewGuid();
+        Show(new NotificationRequest
+        {
+            Id = id,
+            Message = message,
+            Level = level,
+            DurationMs = 0,
+            IsClosable = isClosable
+        });
+
+        return new PersistentNotification(this, id, level, message);
+    }
+
     private sealed class ProgressNotification : IProgressNotification
     {
         private readonly NotificationService _service;
@@ -127,6 +143,53 @@ public sealed class NotificationService : INotificationService
                 IsInProgress = false,
                 Progress = 100,
                 DurationMs = _durationMs
+            });
+    }
+
+    private sealed class PersistentNotification : IPersistentNotification
+    {
+        private readonly NotificationService _service;
+
+        public PersistentNotification(NotificationService service, Guid id, NotificationLevel level, string message)
+        {
+            _service = service;
+            Id = id;
+            Level = level;
+            Message = message;
+        }
+
+        public Guid Id { get; }
+        private NotificationLevel Level { get; set; }
+        private string Message { get; set; }
+
+        public void Update(string? message = null, NotificationLevel? level = null, int? durationMs = null)
+        {
+            if (message is not null)
+            {
+                Message = message;
+            }
+
+            if (level is not null)
+            {
+                Level = level.Value;
+            }
+
+            _service.Update(new NotificationRequest
+            {
+                Id = Id,
+                Message = message ?? string.Empty,
+                Level = level ?? Level,
+                DurationMs = durationMs ?? 0
+            });
+        }
+
+        public void Dismiss()
+            => _service.Update(new NotificationRequest
+            {
+                Id = Id,
+                Message = string.Empty,
+                Level = Level,
+                DurationMs = 1
             });
     }
 }

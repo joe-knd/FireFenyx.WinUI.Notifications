@@ -56,6 +56,39 @@ public interface INotificationService
     /// <param name="message">The message.</param>
     /// <param name="durationMs">The auto-dismiss duration in milliseconds.</param>
     void Error(string message, int durationMs = 3000);
+
+    /// <summary>
+    /// Shows a persistent notification (no auto-dismiss) and returns a handle that can be used to update or dismiss it.
+    /// </summary>
+    /// <param name="message">The message.</param>
+    /// <param name="level">The severity level.</param>
+    /// <param name="isClosable">Whether the user can dismiss the notification.</param>
+    /// <returns>A handle that can be used to dismiss or update the notification.</returns>
+    IPersistentNotification ShowPersistent(string message, NotificationLevel level = NotificationLevel.Info, bool isClosable = false);
+}
+
+/// <summary>
+/// Represents a persistent notification that can be updated and dismissed programmatically.
+/// </summary>
+public interface IPersistentNotification
+{
+    /// <summary>
+    /// Gets the notification identifier.
+    /// </summary>
+    Guid Id { get; }
+
+    /// <summary>
+    /// Updates the message and/or level of the notification and optionally sets a new dismiss duration.
+    /// </summary>
+    /// <param name="message">The new message, or <see langword="null"/> to keep the current message.</param>
+    /// <param name="level">The new level, or <see langword="null"/> to keep the current level.</param>
+    /// <param name="durationMs">Optional duration to start auto-dismiss. Use <c>0</c> or negative to keep persistent.</param>
+    void Update(string? message = null, NotificationLevel? level = null, int? durationMs = null);
+
+    /// <summary>
+    /// Dismisses the notification.
+    /// </summary>
+    void Dismiss();
 }
 
 /// <summary>
