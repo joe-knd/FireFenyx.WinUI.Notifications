@@ -2,14 +2,22 @@
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Media.Animation;
 using System;
-using System.Collections.Generic;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace FireFenyx.WinUI.Notifications.Extensions;
 
+/// <summary>
+/// Provides simple animation helpers for WinUI elements.
+/// </summary>
 public static class AnimationExtensions
 {
+    /// <summary>
+    /// Animates the Y translation of a <see cref="Transform"/>.
+    /// </summary>
+    /// <param name="transform">The transform to animate.</param>
+    /// <param name="to">The target Y value.</param>
+    /// <param name="durationMs">Animation duration in milliseconds.</param>
+    /// <returns>A task that completes when the animation finishes.</returns>
     public static Task AnimateY(this Transform transform, double to, int durationMs)
     {
         var sb = new Storyboard();
@@ -30,6 +38,13 @@ public static class AnimationExtensions
         return tcs.Task;
     }
 
+    /// <summary>
+    /// Animates the opacity of a <see cref="UIElement"/>.
+    /// </summary>
+    /// <param name="element">The element to animate.</param>
+    /// <param name="to">The target opacity.</param>
+    /// <param name="durationMs">Animation duration in milliseconds.</param>
+    /// <returns>A task that completes when the animation finishes.</returns>
     public static Task Fade(this UIElement element, double to, int durationMs)
     {
         var sb = new Storyboard();
@@ -49,6 +64,13 @@ public static class AnimationExtensions
         return tcs.Task;
     }
 
+    /// <summary>
+    /// Animates the scale of a <see cref="UIElement"/>.
+    /// </summary>
+    /// <param name="element">The element to animate.</param>
+    /// <param name="to">The target scale value.</param>
+    /// <param name="durationMs">Animation duration in milliseconds.</param>
+    /// <returns>A task that completes when the animation finishes.</returns>
     public static Task Scale(this UIElement element, double to, int durationMs)
     {
         var transform = element.RenderTransform as ScaleTransform;

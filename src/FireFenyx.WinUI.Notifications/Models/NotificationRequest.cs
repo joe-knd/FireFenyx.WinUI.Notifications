@@ -1,23 +1,60 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace FireFenyx.WinUI.Notifications.Models;
 
+/// <summary>
+/// Represents a notification to display (or update) in a <see cref="Controls.NotificationHost"/>.
+/// </summary>
 public sealed class NotificationRequest
 {
+    /// <summary>
+    /// Gets the identifier for this notification. Updates target an existing notification by id.
+    /// </summary>
     public Guid Id { get; init; } = Guid.NewGuid();
+
+    /// <summary>
+    /// Gets the message displayed for the notification.
+    /// </summary>
     public string Message { get; init; } = string.Empty;
+
+    /// <summary>
+    /// Gets the severity level.
+    /// </summary>
     public NotificationLevel Level { get; init; } = NotificationLevel.Info;
+
+    /// <summary>
+    /// Gets the auto-dismiss duration in milliseconds.
+    /// </summary>
     public int DurationMs { get; init; } = 3000;
 
+    /// <summary>
+    /// Gets optional action button text.
+    /// </summary>
     public string? ActionText { get; init; }
+
+    /// <summary>
+    /// Gets an optional callback executed when the action is invoked.
+    /// </summary>
     public Action? Action { get; init; }
 
+    /// <summary>
+    /// Gets whether this request should show a progress bar.
+    /// </summary>
     public bool IsInProgress { get; init; }
+
+    /// <summary>
+    /// Gets the progress value. Use -1 for indeterminate.
+    /// </summary>
     public double Progress { get; init; } = -1; // -1 = indeterminate
 
+    /// <summary>
+    /// Gets the transition used for showing and dismissing the notification.
+    /// </summary>
     public NotificationTransition Transition { get; init; } = NotificationTransition.SlideAndFade;
+
+    /// <summary>
+    /// Gets the background material.
+    /// </summary>
     public NotificationMaterial Material { get; init; } = NotificationMaterial.Acrylic;
 
     /// <summary>

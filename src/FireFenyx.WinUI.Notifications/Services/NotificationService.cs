@@ -1,22 +1,29 @@
 ﻿using FireFenyx.WinUI.Notifications.Models;
 using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace FireFenyx.WinUI.Notifications.Services;
 
+/// <summary>
+/// Default implementation of <see cref="INotificationService"/> that enqueues requests into an <see cref="INotificationQueue"/>.
+/// </summary>
 public sealed class NotificationService : INotificationService
 {
     private readonly INotificationQueue _queue;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="NotificationService"/> class.
+    /// </summary>
+    /// <param name="queue">The queue used to dispatch notifications.</param>
     public NotificationService(INotificationQueue queue)
     {
         _queue = queue;
     }
 
+    /// <inheritdoc />
     public void Show(NotificationRequest request)
         => _queue.Enqueue(request);
 
+    /// <inheritdoc />
     public void Update(NotificationRequest request)
         => _queue.Enqueue(new NotificationRequest
         {
@@ -33,6 +40,7 @@ public sealed class NotificationService : INotificationService
             Material = request.Material
         });
 
+    /// <inheritdoc />
     public IProgressNotification ShowProgress(string message, int durationMs = 3000, double progress = -1)
     {
         var id = Guid.NewGuid();
@@ -49,6 +57,7 @@ public sealed class NotificationService : INotificationService
         return new ProgressNotification(this, id, durationMs);
     }
 
+    /// <inheritdoc />
     public void Info(string message, int durationMs = 3000)
         => Show(new NotificationRequest
         {
@@ -57,6 +66,7 @@ public sealed class NotificationService : INotificationService
             DurationMs = durationMs
         });
 
+    /// <inheritdoc />
     public void Success(string message, int durationMs = 3000)
         => Show(new NotificationRequest
         {
@@ -65,6 +75,7 @@ public sealed class NotificationService : INotificationService
             DurationMs = durationMs
         });
 
+    /// <inheritdoc />
     public void Warning(string message, int durationMs = 3000)
         => Show(new NotificationRequest
         {
@@ -73,6 +84,7 @@ public sealed class NotificationService : INotificationService
             DurationMs = durationMs
         });
 
+    /// <inheritdoc />
     public void Error(string message, int durationMs = 3000)
         => Show(new NotificationRequest
         {

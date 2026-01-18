@@ -21,7 +21,7 @@ public sealed partial class NotificationHost : UserControl
     private readonly SemaphoreSlim _transitionGate = new(1, 1);
     private sealed class NotificationVisual
     {
-        public NotificationVisual(Guid id, Grid container, InfoBar bar, TextBlock messageText, Microsoft.UI.Xaml.Controls.ProgressBar progressBar)
+        public NotificationVisual(Guid id, Grid container, InfoBar bar, TextBlock messageText, ProgressBar progressBar)
         {
             Id = id;
             Container = container;
@@ -34,7 +34,7 @@ public sealed partial class NotificationHost : UserControl
         public Grid Container { get; }
         public InfoBar Bar { get; }
         public TextBlock MessageText { get; }
-        public Microsoft.UI.Xaml.Controls.ProgressBar ProgressBar { get; }
+        public ProgressBar ProgressBar { get; }
         public CancellationTokenSource? DismissCts { get; set; }
     }
 
@@ -101,7 +101,7 @@ public sealed partial class NotificationHost : UserControl
         };
 
         var message = new TextBlock { TextWrapping = TextWrapping.Wrap };
-        var progress = new Microsoft.UI.Xaml.Controls.ProgressBar
+        var progress = new ProgressBar
         {
             Height = 4,
             Margin = new Thickness(0, 8, 0, 0),

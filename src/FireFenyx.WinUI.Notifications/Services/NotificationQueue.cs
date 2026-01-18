@@ -1,13 +1,14 @@
 ﻿using FireFenyx.WinUI.Notifications.Models;
 using Microsoft.UI.Dispatching;
 using System;
-using System.Collections.Generic;
-using System.Text;
 using System.Threading.Channels;
 using System.Threading.Tasks;
 
 namespace FireFenyx.WinUI.Notifications.Services;
 
+/// <summary>
+/// Default implementation of <see cref="INotificationQueue"/> based on <see cref="Channel{T}"/>.
+/// </summary>
 public sealed class NotificationQueue : INotificationQueue
 {
     private readonly Channel<NotificationRequest> _channel =
@@ -16,6 +17,9 @@ public sealed class NotificationQueue : INotificationQueue
     private Func<NotificationRequest, Task>? _processor;
     private readonly DispatcherQueue? _dispatcherQueue;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="NotificationQueue"/> class.
+    /// </summary>
     public NotificationQueue()
     {
         // Resolving this service should happen on the UI thread in typical WinUI apps.
@@ -24,9 +28,11 @@ public sealed class NotificationQueue : INotificationQueue
         Task.Run(ProcessLoopAsync);
     }
 
+    /// <inheritdoc />
     public void SetProcessor(Func<NotificationRequest, Task> processor)
         => _processor = processor;
 
+    /// <inheritdoc />
     public void Enqueue(NotificationRequest request) 
         => _channel.Writer.TryWrite(request);
 
