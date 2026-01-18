@@ -45,4 +45,13 @@ public sealed partial class MainWindow : Window
     private void Progress_Click(object sender, RoutedEventArgs e)
         => ViewModel.ShowProgress();
 
+    private void SendFile_Click(object sender, RoutedEventArgs e)
+        => ViewModel.SendFileComplexScenario();
+
+    private void ShowPersistent_Click(object sender, RoutedEventArgs e)
+        => ViewModel.ShowPersistentNoConnection();
+
+    private void DismissPersistent_Click(object sender, RoutedEventArgs e)
+        => ViewModel.DismissPersistent();
+
 }

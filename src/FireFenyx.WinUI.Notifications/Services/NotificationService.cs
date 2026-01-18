@@ -32,8 +32,12 @@ public sealed class NotificationService : INotificationService
             Message = request.Message,
             Level = request.Level,
             DurationMs = request.DurationMs,
+            IsClosable = request.IsClosable,
+            DismissRequested = request.DismissRequested,
             ActionText = request.ActionText,
             Action = request.Action,
+            ActionCommand = request.ActionCommand,
+            ActionCommandParameter = request.ActionCommandParameter,
             IsInProgress = request.IsInProgress,
             Progress = request.Progress,
             Transition = request.Transition,
@@ -134,6 +138,9 @@ public sealed class NotificationService : INotificationService
                 DurationMs = _durationMs
             });
 
+        public void Indeterminate(string? message = null)
+            => Report(-1, message);
+
         public void Complete(string? message = null)
             => _service.Update(new NotificationRequest
             {
@@ -189,7 +196,8 @@ public sealed class NotificationService : INotificationService
                 Id = Id,
                 Message = string.Empty,
                 Level = Level,
-                DurationMs = 1
+                DurationMs = 0,
+                DismissRequested = true
             });
     }
 }

@@ -23,6 +23,9 @@
             <Button Click="Warning_Click" Content="Show Warning" />
             <Button Click="Error_Click" Content="Show Error" />
             <Button Click="Progress_Click" Content="Show Progress" />
+            <Button Click="SendFile_Click" Content="Send File (complex)" />
+            <Button Click="ShowPersistent_Click" Content="Show Persistent (no connection)" />
+            <Button Click="DismissPersistent_Click" Content="Dismiss Persistent" />
         </StackPanel>
 
         <!--  Notification Host  -->

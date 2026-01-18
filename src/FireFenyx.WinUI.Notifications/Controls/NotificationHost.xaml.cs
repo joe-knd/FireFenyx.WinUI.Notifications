@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Windows.Input;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -62,13 +63,14 @@ public sealed partial class NotificationHost : UserControl
     private readonly SemaphoreSlim _transitionGate = new(1, 1);
     private sealed class NotificationVisual
     {
-        public NotificationVisual(Guid id, Grid container, InfoBar bar, TextBlock messageText, ProgressBar progressBar)
+        public NotificationVisual(Guid id, Grid container, InfoBar bar, TextBlock messageText, ProgressBar progressBar, Button actionButton)
         {
             Id = id;
             Container = container;
             Bar = bar;
             MessageText = messageText;
             ProgressBar = progressBar;
+            ActionButton = actionButton;
         }
 
         public Guid Id { get; }
@@ -76,7 +78,12 @@ public sealed partial class NotificationHost : UserControl
         public InfoBar Bar { get; }
         public TextBlock MessageText { get; }
         public ProgressBar ProgressBar { get; }
+        public Button ActionButton { get; }
         public CancellationTokenSource? DismissCts { get; set; }
+        public Action? Action { get; set; }
+        public string? ActionText { get; set; }
+        public ICommand? ActionCommand { get; set; }
+        public object? ActionCommandParameter { get; set; }
     }
 
     private readonly Dictionary<Guid, NotificationVisual> _visuals = new();
@@ -108,9 +115,20 @@ public sealed partial class NotificationHost : UserControl
         await _transitionGate.WaitAsync().ConfigureAwait(true);
         try
         {
-            if (request.IsUpdate && request.DurationMs == 1 && string.IsNullOrEmpty(request.Message))
+            if (request.IsUpdate && request.DismissRequested)
             {
-                await DismissAsync(request.Id, request.Transition);
+                if (_visuals.TryGetValue(request.Id, out var dismissVisual))
+                {
+                    dismissVisual.DismissCts?.Cancel();
+                    dismissVisual.DismissCts?.Dispose();
+                    dismissVisual.DismissCts = null;
+
+                    await AnimateOut(dismissVisual, request.Transition);
+
+                    Stack.Children.Remove(dismissVisual.Container);
+                    _visuals.Remove(request.Id);
+                    Overlay.IsHitTestVisible = _visuals.Count > 0;
+                }
                 return;
             }
 
@@ -126,6 +144,15 @@ public sealed partial class NotificationHost : UserControl
                 else
                 {
                     Stack.Children.Add(visual.Container);
+                }
+
+                // If the first request for a given Id is an update, we still need to show the visual.
+                if (request.IsUpdate)
+                {
+                    ApplyRequestToVisual(visual, request);
+                    await AnimateIn(visual, request.Transition);
+                    RestartDismissTimer(visual, request);
+                    return;
                 }
             }
 
@@ -170,19 +197,65 @@ public sealed partial class NotificationHost : UserControl
         {
             Height = 4,
             Margin = new Thickness(0, 8, 0, 0),
-            Visibility = Visibility.Collapsed
+            Visibility = Visibility.Collapsed,
+            Background = new SolidColorBrush(Microsoft.UI.Colors.Transparent)
         };
 
-        var stack = new StackPanel();
-        stack.Children.Add(message);
-        stack.Children.Add(progress);
-        bar.Content = stack;
+        var actionButton = new Button
+        {
+            Visibility = Visibility.Collapsed,
+            HorizontalAlignment = HorizontalAlignment.Right,
+            MinWidth = 80
+        };
+
+        actionButton.Click += (_, __) =>
+        {
+            try
+            {
+                // The consumer is responsible for prompting/confirming, cancelling, etc.
+                // This runs on the UI thread.
+                if (actionButton.Command is ICommand command)
+                {
+                    var parameter = actionButton.CommandParameter;
+                    if (command.CanExecute(parameter))
+                    {
+                        command.Execute(parameter);
+                    }
+                }
+                else if (actionButton.Tag is Action action)
+                {
+                    action();
+                }
+            }
+            catch
+            {
+                // Intentionally ignore exceptions from consumer code.
+            }
+        };
+
+        var headerGrid = new Grid();
+        headerGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        headerGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+
+        Grid.SetColumn(message, 0);
+        message.VerticalAlignment = VerticalAlignment.Center;
+        headerGrid.Children.Add(message);
+
+        Grid.SetColumn(actionButton, 1);
+        actionButton.Margin = new Thickness(12, 4, 0, 0);
+        actionButton.VerticalAlignment = VerticalAlignment.Center;
+        headerGrid.Children.Add(actionButton);
+
+        var contentStack = new StackPanel();
+        contentStack.Children.Add(headerGrid);
+        contentStack.Children.Add(progress);
+        bar.Content = contentStack;
 
         bar.CloseButtonClick += (_, __) => CloseClicked(id);
 
         container.Children.Add(bar);
 
-        return new NotificationVisual(id, container, bar, message, progress);
+        return new NotificationVisual(id, container, bar, message, progress, actionButton);
     }
 
     private void CloseClicked(Guid id)
@@ -202,7 +275,13 @@ public sealed partial class NotificationHost : UserControl
 
         if (request.IsInProgress)
         {
-            visual.ProgressBar.Visibility = Visibility.Visible;
+            if (visual.ProgressBar.Visibility != Visibility.Visible)
+            {
+                visual.ProgressBar.Opacity = 0;
+                visual.ProgressBar.Visibility = Visibility.Visible;
+                _ = visual.ProgressBar.Fade(1, 150);
+            }
+
             visual.ProgressBar.IsIndeterminate = request.Progress < 0;
             if (request.Progress >= 0)
             {
@@ -211,11 +290,74 @@ public sealed partial class NotificationHost : UserControl
         }
         else
         {
-            visual.ProgressBar.Visibility = Visibility.Collapsed;
+            if (visual.ProgressBar.Visibility == Visibility.Visible)
+            {
+                _ = HideWithFadeAsync(visual.ProgressBar);
+            }
+        }
+
+        // Sticky action: if an update doesn't specify action fields, keep the previous action configuration.
+        var hasActionUpdate = request.ActionText is not null || request.ActionCommand is not null || request.Action is not null || request.ActionCommandParameter is not null;
+        if (!request.IsUpdate || hasActionUpdate)
+        {
+            if (!string.IsNullOrWhiteSpace(request.ActionText) && (request.ActionCommand is not null || request.Action is not null))
+            {
+                visual.ActionText = request.ActionText;
+                visual.Action = request.Action;
+                visual.ActionCommand = request.ActionCommand;
+                visual.ActionCommandParameter = request.ActionCommandParameter;
+            }
+            else
+            {
+                visual.ActionText = null;
+                visual.Action = null;
+                visual.ActionCommand = null;
+                visual.ActionCommandParameter = null;
+            }
+        }
+
+        if (!string.IsNullOrWhiteSpace(visual.ActionText) && (visual.ActionCommand is not null || visual.Action is not null))
+        {
+            visual.ActionButton.Content = visual.ActionText;
+            visual.ActionButton.Command = visual.ActionCommand;
+            visual.ActionButton.CommandParameter = visual.ActionCommandParameter;
+            visual.ActionButton.Tag = visual.Action;
+            if (visual.ActionButton.Visibility != Visibility.Visible)
+            {
+                visual.ActionButton.Opacity = 0;
+                visual.ActionButton.Visibility = Visibility.Visible;
+                _ = visual.ActionButton.Fade(1, 150);
+            }
+        }
+        else
+        {
+            visual.ActionButton.Command = null;
+            visual.ActionButton.CommandParameter = null;
+            visual.ActionButton.Tag = null;
+            if (visual.ActionButton.Visibility == Visibility.Visible)
+            {
+                _ = HideWithFadeAsync(visual.ActionButton);
+            }
         }
 
         visual.Bar.IsClosable = request.IsClosable;
         visual.Bar.IsOpen = true;
+    }
+
+    private static async Task HideWithFadeAsync(UIElement element)
+    {
+        try
+        {
+            await element.Fade(0, 150).ConfigureAwait(true);
+        }
+        catch
+        {
+            // Ignore animation failures.
+        }
+        finally
+        {
+            element.Visibility = Visibility.Collapsed;
+        }
     }
 
     private void RestartDismissTimer(NotificationVisual visual, NotificationRequest request)

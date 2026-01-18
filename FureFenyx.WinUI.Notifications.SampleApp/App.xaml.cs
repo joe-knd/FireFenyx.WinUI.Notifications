@@ -1,4 +1,5 @@
 ﻿using FireFenyx.WinUI.Notifications.Extensions;
+using FureFenyx.WinUI.Notifications.SampleApp.Services;
 using FureFenyx.WinUI.Notifications.SampleApp.ViewModels;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
@@ -31,6 +32,8 @@ public partial class App : Application
     private Window? _window;
     public static IServiceProvider Services { get; private set; } = default!;
 
+    public static Window? MainWindow { get; private set; }
+
 
     /// <summary>
     /// Initializes the singleton application object.  This is the first line of authored code
@@ -53,6 +56,9 @@ public partial class App : Application
         // Register ViewModels
         services.AddSingleton<MainViewModel>();
 
+        // UI services
+        services.AddSingleton<IDialogService>(_ => new ContentDialogService(() => MainWindow));
+
         Services = services.BuildServiceProvider();
     }
 
@@ -64,6 +70,7 @@ public partial class App : Application
     protected override void OnLaunched(Microsoft.UI.Xaml.LaunchActivatedEventArgs args)
     {
         _window = new MainWindow();
+        MainWindow = _window;
         _window.Activate();
     }
 }

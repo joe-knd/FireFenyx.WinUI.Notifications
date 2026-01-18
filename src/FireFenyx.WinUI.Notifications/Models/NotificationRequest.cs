@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Windows.Input;
 
 namespace FireFenyx.WinUI.Notifications.Models;
 
@@ -34,6 +35,11 @@ public sealed class NotificationRequest
     public bool IsClosable { get; init; } = true;
 
     /// <summary>
+    /// When set on an update request, instructs the host to dismiss the notification.
+    /// </summary>
+    public bool DismissRequested { get; init; }
+
+    /// <summary>
     /// Gets optional action button text.
     /// </summary>
     public string? ActionText { get; init; }
@@ -42,6 +48,16 @@ public sealed class NotificationRequest
     /// Gets an optional callback executed when the action is invoked.
     /// </summary>
     public Action? Action { get; init; }
+
+    /// <summary>
+    /// Gets an optional command executed when the action is invoked.
+    /// </summary>
+    public ICommand? ActionCommand { get; init; }
+
+    /// <summary>
+    /// Gets an optional command parameter passed to <see cref="ActionCommand"/>.
+    /// </summary>
+    public object? ActionCommandParameter { get; init; }
 
     /// <summary>
     /// Gets whether this request should show a progress bar.

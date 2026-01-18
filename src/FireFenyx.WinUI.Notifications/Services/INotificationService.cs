@@ -109,6 +109,12 @@ public interface IProgressNotification
     void Report(double progress, string? message = null);
 
     /// <summary>
+    /// Sets the progress indicator to indeterminate mode and optionally updates the message.
+    /// </summary>
+    /// <param name="message">An optional message update.</param>
+    void Indeterminate(string? message = null);
+
+    /// <summary>
     /// Marks the progress notification as complete.
     /// </summary>
     /// <param name="message">An optional completion message.</param>
