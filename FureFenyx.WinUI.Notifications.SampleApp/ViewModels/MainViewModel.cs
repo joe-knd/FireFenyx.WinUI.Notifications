@@ -159,7 +159,7 @@ public partial class MainViewModel : ObservableObject
             title: "Synchronous maintenance window",
             duration: TimeSpan.FromSeconds(15),
             level: NotificationLevel.Info,
-            completionMessage: "Synchronous maintenance window started.");
+            completionMessage: "Synchronous maintenance window complete.");
     }
 
     public void CancelCountdown()
