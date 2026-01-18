@@ -1,5 +1,7 @@
 ﻿using FireFenyx.WinUI.Notifications.Models;
 using System;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace FireFenyx.WinUI.Notifications.Services;
 
@@ -43,6 +45,38 @@ public sealed class NotificationService : INotificationService
             Transition = request.Transition,
             Material = request.Material
         });
+
+    /// <inheritdoc />
+    public ICountdownNotification ShowCountdown(string title, TimeSpan duration, NotificationLevel level = NotificationLevel.Info, string? completionMessage = null, int updateIntervalMs = 1000)
+    {
+        if (duration <= TimeSpan.Zero)
+        {
+            throw new ArgumentOutOfRangeException(nameof(duration), "Duration must be greater than zero.");
+        }
+
+        if (updateIntervalMs <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(updateIntervalMs), "Update interval must be greater than zero.");
+        }
+
+        var id = Guid.NewGuid();
+        var defaultCompletion = completionMessage ?? $"{title} completed.";
+        var countdown = new CountdownNotification(this, id, defaultCompletion);
+
+        Show(new NotificationRequest
+        {
+            Id = id,
+            Message = FormatCountdownMessage(title, duration),
+            Level = level,
+            IsInProgress = true,
+            Progress = 0,
+            DurationMs = 0
+        });
+
+        _ = RunCountdownAsync(countdown, title, duration, level, defaultCompletion, updateIntervalMs);
+
+        return countdown;
+    }
 
     /// <inheritdoc />
     public IProgressNotification ShowProgress(string message, int durationMs = 3000, double progress = -1)
@@ -199,5 +233,152 @@ public sealed class NotificationService : INotificationService
                 DurationMs = 0,
                 DismissRequested = true
             });
+    }
+
+    private async Task RunCountdownAsync(CountdownNotification handle, string title, TimeSpan duration, NotificationLevel level, string completionMessage, int updateIntervalMs)
+    {
+        var totalMs = Math.Max(duration.TotalMilliseconds, 1);
+        var interval = TimeSpan.FromMilliseconds(updateIntervalMs);
+        var start = DateTimeOffset.UtcNow;
+
+        try
+        {
+            while (!handle.Token.IsCancellationRequested)
+            {
+                var elapsed = DateTimeOffset.UtcNow - start;
+                var remaining = duration - elapsed;
+
+                if (remaining <= TimeSpan.Zero)
+                {
+                    handle.CompleteFromTimer(completionMessage);
+                    return;
+                }
+
+                var progress = Math.Clamp(elapsed.TotalMilliseconds / totalMs * 100d, 0, 100);
+
+                Update(new NotificationRequest
+                {
+                    Id = handle.Id,
+                    Message = FormatCountdownMessage(title, remaining),
+                    Level = level,
+                    IsInProgress = true,
+                    Progress = progress,
+                    DurationMs = 0
+                });
+
+                await Task.Delay(interval, handle.Token).ConfigureAwait(false);
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            // Expected when the countdown is cancelled or completed manually.
+        }
+    }
+
+    private static string FormatCountdownMessage(string title, TimeSpan remaining)
+    {
+        if (remaining < TimeSpan.Zero)
+        {
+            remaining = TimeSpan.Zero;
+        }
+
+        return $"{title} ({FormatRemaining(remaining)} remaining)";
+    }
+
+    private static string FormatRemaining(TimeSpan remaining)
+    {
+        remaining = remaining < TimeSpan.Zero ? TimeSpan.Zero : remaining;
+
+        if (remaining.TotalHours >= 1)
+        {
+            var hours = (int)remaining.TotalHours;
+            return $"{hours:D2}:{remaining.Minutes:D2}:{remaining.Seconds:D2}";
+        }
+
+        return $"{remaining.Minutes:D2}:{remaining.Seconds:D2}";
+    }
+
+    private sealed class CountdownNotification : ICountdownNotification
+    {
+        private readonly NotificationService _service;
+        private readonly CancellationTokenSource _cts = new();
+        private readonly string _defaultCompletionMessage;
+        private int _terminalState;
+
+        public CountdownNotification(NotificationService service, Guid id, string defaultCompletionMessage)
+        {
+            _service = service;
+            Id = id;
+            _defaultCompletionMessage = defaultCompletionMessage;
+        }
+
+        public Guid Id { get; }
+
+        internal CancellationToken Token => _cts.Token;
+
+        private bool TryBeginTerminalState()
+            => Interlocked.Exchange(ref _terminalState, 1) == 0;
+
+        public void Cancel(string? message = null)
+        {
+            if (!TryBeginTerminalState())
+            {
+                return;
+            }
+
+            _cts.Cancel();
+            _service.Update(new NotificationRequest
+            {
+                Id = Id,
+                Message = message ?? "Countdown canceled.",
+                Level = NotificationLevel.Warning,
+                IsInProgress = false,
+                Progress = 0,
+                DurationMs = 2500
+            });
+
+            _cts.Dispose();
+        }
+
+        public void Complete(string? message = null)
+        {
+            if (!TryBeginTerminalState())
+            {
+                return;
+            }
+
+            _cts.Cancel();
+            _service.Update(new NotificationRequest
+            {
+                Id = Id,
+                Message = message ?? _defaultCompletionMessage,
+                Level = NotificationLevel.Success,
+                IsInProgress = false,
+                Progress = 100,
+                DurationMs = 2500
+            });
+
+            _cts.Dispose();
+        }
+
+        internal void CompleteFromTimer(string message)
+        {
+            if (!TryBeginTerminalState())
+            {
+                return;
+            }
+
+            _service.Update(new NotificationRequest
+            {
+                Id = Id,
+                Message = message,
+                Level = NotificationLevel.Success,
+                IsInProgress = false,
+                Progress = 100,
+                DurationMs = 2500
+            });
+
+            _cts.Dispose();
+        }
     }
 }
