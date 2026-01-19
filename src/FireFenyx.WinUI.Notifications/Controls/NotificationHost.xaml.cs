@@ -473,8 +473,6 @@ public sealed partial class NotificationHost : UserControl
 
     private async Task AnimateOut(NotificationVisual visual, NotificationTransition transition)
     {
-        visual.Bar.IsOpen = false;
-
         var exitOffset = HostPosition == NotificationHostPosition.Top ? -40 : 40;
 
         switch (transition)
@@ -495,10 +493,13 @@ public sealed partial class NotificationHost : UserControl
                 break;
 
             default: // SlideUp reverse
-                await visual.Container.RenderTransform.AnimateY(exitOffset, 250);
-                visual.Container.Opacity = 0;
+                await Task.WhenAll(
+                    visual.Container.RenderTransform.AnimateY(exitOffset, 250),
+                    visual.Container.Fade(0, 250));
                 break;
         }
+
+        visual.Bar.IsOpen = false;
     }
 
 }
