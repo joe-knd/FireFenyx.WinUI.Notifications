@@ -1,5 +1,6 @@
 ﻿using FireFenyx.WinUI.Notifications.Models;
 using System;
+using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -275,7 +276,12 @@ public sealed class NotificationService : INotificationService
         }
         catch (ObjectDisposedException)
         {
-            // Expected when the CTS is disposed immediately after cancellation.
+            // Expected when the CTS is disposed immediately after cancellation or while Task.Delay is awaiting.
+        catch (Exception ex)
+        {
+            // Log unexpected exceptions to prevent unobserved task exceptions.
+            // Using Debug.WriteLine for diagnostic output without adding logging dependencies.
+            Debug.WriteLine($"Unexpected exception in RunCountdownAsync: {ex}");
         }
     }
 
