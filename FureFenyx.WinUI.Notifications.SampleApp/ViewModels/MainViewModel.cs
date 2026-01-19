@@ -1,14 +1,12 @@
-﻿using FireFenyx.WinUI.Notifications.Models;
+﻿using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
+using FireFenyx.WinUI.Notifications.Models;
 using FireFenyx.WinUI.Notifications.Services;
 using FureFenyx.WinUI.Notifications.SampleApp.Services;
-using CommunityToolkit.Mvvm.ComponentModel;
-using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.DependencyInjection;
 using System;
-using System.Collections.Generic;
-using System.Text;
-using System.Threading.Tasks;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace FureFenyx.WinUI.Notifications.SampleApp.ViewModels;
 
@@ -18,6 +16,7 @@ public partial class MainViewModel : ObservableObject
     private readonly INotificationService _notifications;
     private readonly IDialogService _dialogs;
     private IPersistentNotification? _persistent;
+    private ICountdownNotification? _countdown;
 
     private CancellationTokenSource? _sendCts;
     private volatile bool _sendPaused;
@@ -151,6 +150,22 @@ public partial class MainViewModel : ObservableObject
         _persistent?.Dismiss();
         _persistent = null;
         _notifications.Success("Connection restored!");
+    }
+
+    public void StartCountdown()
+    {
+        _countdown?.Cancel("Countdown replaced.");
+        _countdown = _notifications.ShowCountdown(
+            title: "Synchronous maintenance window",
+            duration: TimeSpan.FromSeconds(15),
+            level: NotificationLevel.Info,
+            completionMessage: "Synchronous maintenance window complete.");
+    }
+
+    public void CancelCountdown()
+    {
+        _countdown?.Cancel("Synchronous maintenance window canceled.");
+        _countdown = null;
     }
 
 }

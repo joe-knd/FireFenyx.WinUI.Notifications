@@ -24,6 +24,17 @@ public interface INotificationService
     IProgressNotification ShowProgress(string message, int durationMs = 3000, double progress = -1);
 
     /// <summary>
+    /// Shows a countdown notification that automatically updates its remaining time until completion.
+    /// </summary>
+    /// <param name="title">A short title that prefixes the remaining time.</param>
+    /// <param name="duration">Total countdown duration.</param>
+    /// <param name="level">The severity level used while counting down.</param>
+    /// <param name="completionMessage">Optional message shown when the countdown finishes.</param>
+    /// <param name="updateIntervalMs">How often (in milliseconds) the UI should refresh.</param>
+    /// <returns>A handle that can be used to cancel or complete the countdown early.</returns>
+    ICountdownNotification ShowCountdown(string title, TimeSpan duration, NotificationLevel level = NotificationLevel.Info, string? completionMessage = null, int updateIntervalMs = 1000);
+
+    /// <summary>
     /// Updates an existing notification by <see cref="NotificationRequest.Id"/>.
     /// </summary>
     /// <param name="request">The update request. The <see cref="NotificationRequest.Id"/> must match an existing notification.</param>
@@ -118,5 +129,28 @@ public interface IProgressNotification
     /// Marks the progress notification as complete.
     /// </summary>
     /// <param name="message">An optional completion message.</param>
+    void Complete(string? message = null);
+}
+
+/// <summary>
+/// Represents an automatically updating countdown notification.
+/// </summary>
+public interface ICountdownNotification
+{
+    /// <summary>
+    /// Gets the notification identifier.
+    /// </summary>
+    Guid Id { get; }
+
+    /// <summary>
+    /// Cancels the countdown and optionally updates the message.
+    /// </summary>
+    /// <param name="message">Optional cancellation message.</param>
+    void Cancel(string? message = null);
+
+    /// <summary>
+    /// Completes the countdown immediately and optionally updates the message.
+    /// </summary>
+    /// <param name="message">Optional completion message.</param>
     void Complete(string? message = null);
 }
