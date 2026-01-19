@@ -273,6 +273,10 @@ public sealed class NotificationService : INotificationService
         {
             // Expected when the countdown is cancelled or completed manually.
         }
+        catch (ObjectDisposedException)
+        {
+            // Expected when the CTS is disposed immediately after cancellation.
+        }
     }
 
     private static string FormatCountdownMessage(string title, TimeSpan remaining)
