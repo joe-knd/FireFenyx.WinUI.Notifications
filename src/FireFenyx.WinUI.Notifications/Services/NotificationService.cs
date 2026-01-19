@@ -274,6 +274,9 @@ public sealed class NotificationService : INotificationService
         {
             // Expected when the countdown is cancelled or completed manually.
         }
+        catch (ObjectDisposedException)
+        {
+            // Expected when the CTS is disposed while Task.Delay is awaiting.
         catch (Exception ex)
         {
             // Log unexpected exceptions to prevent unobserved task exceptions.
