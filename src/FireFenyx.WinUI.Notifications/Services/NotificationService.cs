@@ -1,5 +1,6 @@
 ﻿using FireFenyx.WinUI.Notifications.Models;
 using System;
+using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -272,6 +273,12 @@ public sealed class NotificationService : INotificationService
         catch (OperationCanceledException)
         {
             // Expected when the countdown is cancelled or completed manually.
+        }
+        catch (Exception ex)
+        {
+            // Log unexpected exceptions to prevent unobserved task exceptions.
+            // Using Debug.WriteLine for diagnostic output without adding logging dependencies.
+            Debug.WriteLine($"Unexpected exception in RunCountdownAsync: {ex}");
         }
     }
 
