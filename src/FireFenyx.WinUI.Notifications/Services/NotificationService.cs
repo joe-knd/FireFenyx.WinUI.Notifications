@@ -276,7 +276,7 @@ public sealed class NotificationService : INotificationService
         }
         catch (ObjectDisposedException)
         {
-            // Expected when the CTS is disposed while Task.Delay is awaiting.
+            // Expected when the CTS is disposed immediately after cancellation or while Task.Delay is awaiting.
         catch (Exception ex)
         {
             // Log unexpected exceptions to prevent unobserved task exceptions.
