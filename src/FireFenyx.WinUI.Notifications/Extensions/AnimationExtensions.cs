@@ -29,7 +29,7 @@ public static class AnimationExtensions
         };
 
         Storyboard.SetTarget(anim, transform);
-        Storyboard.SetTargetProperty(anim, "Y");
+        Storyboard.SetTargetProperty(anim, "(TranslateTransform.Y)");
         sb.Children.Add(anim);
 
         var tcs = new TaskCompletionSource();
@@ -55,7 +55,7 @@ public static class AnimationExtensions
         };
 
         Storyboard.SetTarget(anim, element);
-        Storyboard.SetTargetProperty(anim, "Opacity");
+        Storyboard.SetTargetProperty(anim, "(UIElement.Opacity)");
         sb.Children.Add(anim);
 
         var tcs = new TaskCompletionSource();
