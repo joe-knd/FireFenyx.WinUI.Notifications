@@ -37,11 +37,13 @@ public sealed class NotificationService : INotificationService
             ActionText = request.ActionText,
             Action = request.Action,
             ActionCommand = request.ActionCommand,
+            ActionAsync = request.ActionAsync,
             ActionCommandParameter = request.ActionCommandParameter,
             IsInProgress = request.IsInProgress,
             Progress = request.Progress,
             Transition = request.Transition,
-            Material = request.Material
+            Material = request.Material,
+            MaxWidth = request.MaxWidth
         });
 
     /// <inheritdoc />
@@ -96,6 +98,14 @@ public sealed class NotificationService : INotificationService
             Level = NotificationLevel.Error,
             DurationMs = durationMs
         });
+
+    /// <inheritdoc />
+    public void Dismiss(Guid id)
+        => Update(new NotificationRequest { Id = id, DismissRequested = true });
+
+    /// <inheritdoc />
+    public void DismissAll()
+        => Update(new NotificationRequest { Id = Guid.Empty, DismissRequested = true });
 
     /// <inheritdoc />
     public IPersistentNotification ShowPersistent(string message, NotificationLevel level = NotificationLevel.Info, bool isClosable = false)

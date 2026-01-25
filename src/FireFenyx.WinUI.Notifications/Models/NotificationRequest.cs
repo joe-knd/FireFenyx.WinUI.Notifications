@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading.Tasks;
 using System.Windows.Input;
 
 namespace FireFenyx.WinUI.Notifications.Models;
@@ -55,6 +56,11 @@ public sealed class NotificationRequest
     public ICommand? ActionCommand { get; init; }
 
     /// <summary>
+    /// Gets an optional async action executed when the action is invoked.
+    /// </summary>
+    public Func<Task>? ActionAsync { get; init; }
+
+    /// <summary>
     /// Gets an optional command parameter passed to <see cref="ActionCommand"/>.
     /// </summary>
     public object? ActionCommandParameter { get; init; }
@@ -78,6 +84,12 @@ public sealed class NotificationRequest
     /// Gets the background material.
     /// </summary>
     public NotificationMaterial Material { get; init; } = NotificationMaterial.Acrylic;
+
+    /// <summary>
+    /// Gets an optional maximum width for the notification. When set, the notification will wrap
+    /// and grow vertically up to this width.
+    /// </summary>
+    public double? MaxWidth { get; init; }
 
     /// <summary>
     /// When set, this request updates an existing notification with the same <see cref="Id"/>

@@ -32,7 +32,13 @@
         <notifications:NotificationHost
             x:Name="Notifications"
             notifySvc:NotificationHostService.Queue="{x:Bind ViewModel.NotificationQueue, Mode=OneTime}"
-            HostPosition="Bottom" />
+            HostPosition="Bottom"
+            DefaultDurationMs="4000"
+            DefaultTransition="SlideAndFade"
+            DefaultMaterial="Acrylic"
+            HostHorizontalAlignment="Center"
+            HostSpacing="10"
+            HostPadding="0,0,0,8" />
 
 
     </Grid>

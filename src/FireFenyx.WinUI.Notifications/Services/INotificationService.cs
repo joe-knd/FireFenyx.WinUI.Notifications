@@ -58,6 +58,17 @@ public interface INotificationService
     void Error(string message, int durationMs = 3000);
 
     /// <summary>
+    /// Dismisses a notification by id.
+    /// </summary>
+    /// <param name="id">The notification identifier.</param>
+    void Dismiss(Guid id);
+
+    /// <summary>
+    /// Dismisses all notifications currently shown by the host.
+    /// </summary>
+    void DismissAll();
+
+    /// <summary>
     /// Shows a persistent notification (no auto-dismiss) and returns a handle that can be used to update or dismiss it.
     /// </summary>
     /// <param name="message">The message.</param>

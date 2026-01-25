@@ -148,7 +148,10 @@ public partial class MainViewModel : ObservableObject
 
     public void DismissPersistent()
     {
-        _persistent?.Dismiss();
+        if (_persistent is not null)
+        {
+            _notifications.Dismiss(_persistent.Id);
+        }
         _persistent = null;
         _notifications.Success("Connection restored!");
     }

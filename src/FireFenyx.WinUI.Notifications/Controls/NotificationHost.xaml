@@ -18,9 +18,9 @@
           IsHitTestVisible="False">
 
         <StackPanel x:Name="Stack"
-                    HorizontalAlignment="Center"
+                    HorizontalAlignment="{x:Bind HostHorizontalAlignment, Mode=OneWay}"
                     VerticalAlignment="{x:Bind HostVerticalAlignment, Mode=OneWay}"
                     Margin="{x:Bind HostMargin, Mode=OneWay}"
-                    Spacing="8" />
+                    Spacing="{x:Bind HostSpacing, Mode=OneWay}" />
     </Grid>
 </UserControl>

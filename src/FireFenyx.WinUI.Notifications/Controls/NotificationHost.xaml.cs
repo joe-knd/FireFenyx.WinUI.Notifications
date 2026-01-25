@@ -54,11 +54,166 @@ public sealed partial class NotificationHost : UserControl
         set => SetValue(HostPositionProperty, value);
     }
 
+    /// <summary>
+    /// Identifies the <see cref="DefaultDurationMs"/> dependency property.
+    /// </summary>
+    public static readonly DependencyProperty DefaultDurationMsProperty =
+        DependencyProperty.Register(
+            nameof(DefaultDurationMs),
+            typeof(int),
+            typeof(NotificationHost),
+            new PropertyMetadata(3000));
+
+    /// <summary>
+    /// Gets or sets the default duration (ms) used when a request does not specify a duration.
+    /// </summary>
+    public int DefaultDurationMs
+    {
+        get => (int)GetValue(DefaultDurationMsProperty);
+        set => SetValue(DefaultDurationMsProperty, value);
+    }
+
+    /// <summary>
+    /// Identifies the <see cref="DefaultTransition"/> dependency property.
+    /// </summary>
+    public static readonly DependencyProperty DefaultTransitionProperty =
+        DependencyProperty.Register(
+            nameof(DefaultTransition),
+            typeof(NotificationTransition),
+            typeof(NotificationHost),
+            new PropertyMetadata(NotificationTransition.SlideAndFade));
+
+    /// <summary>
+    /// Gets or sets the default transition used when a request does not specify one.
+    /// </summary>
+    public NotificationTransition DefaultTransition
+    {
+        get => (NotificationTransition)GetValue(DefaultTransitionProperty);
+        set => SetValue(DefaultTransitionProperty, value);
+    }
+
+    /// <summary>
+    /// Identifies the <see cref="DefaultMaterial"/> dependency property.
+    /// </summary>
+    public static readonly DependencyProperty DefaultMaterialProperty =
+        DependencyProperty.Register(
+            nameof(DefaultMaterial),
+            typeof(NotificationMaterial),
+            typeof(NotificationHost),
+            new PropertyMetadata(NotificationMaterial.Acrylic));
+
+    /// <summary>
+    /// Gets or sets the default material used when a request does not specify one.
+    /// </summary>
+    public NotificationMaterial DefaultMaterial
+    {
+        get => (NotificationMaterial)GetValue(DefaultMaterialProperty);
+        set => SetValue(DefaultMaterialProperty, value);
+    }
+
+    /// <summary>
+    /// Identifies the <see cref="HostHorizontalAlignment"/> dependency property.
+    /// </summary>
+    public static readonly DependencyProperty HostHorizontalAlignmentProperty =
+        DependencyProperty.Register(
+            nameof(HostHorizontalAlignment),
+            typeof(HorizontalAlignment),
+            typeof(NotificationHost),
+            new PropertyMetadata(HorizontalAlignment.Center, OnHostLayoutChanged));
+
+    /// <summary>
+    /// Gets or sets the horizontal alignment for the notification stack.
+    /// </summary>
+    public HorizontalAlignment HostHorizontalAlignment
+    {
+        get => (HorizontalAlignment)GetValue(HostHorizontalAlignmentProperty);
+        set => SetValue(HostHorizontalAlignmentProperty, value);
+    }
+
+    /// <summary>
+    /// Identifies the <see cref="HostSpacing"/> dependency property.
+    /// </summary>
+    public static readonly DependencyProperty HostSpacingProperty =
+        DependencyProperty.Register(
+            nameof(HostSpacing),
+            typeof(double),
+            typeof(NotificationHost),
+            new PropertyMetadata(8d, OnHostLayoutChanged));
+
+    /// <summary>
+    /// Gets or sets the spacing between notifications.
+    /// </summary>
+    public double HostSpacing
+    {
+        get => (double)GetValue(HostSpacingProperty);
+        set => SetValue(HostSpacingProperty, value);
+    }
+
+    /// <summary>
+    /// Identifies the <see cref="HostPadding"/> dependency property.
+    /// </summary>
+    public static readonly DependencyProperty HostPaddingProperty =
+        DependencyProperty.Register(
+            nameof(HostPadding),
+            typeof(Thickness),
+            typeof(NotificationHost),
+            new PropertyMetadata(new Thickness(0, 0, 0, 0), OnHostLayoutChanged));
+
+    /// <summary>
+    /// Gets or sets an additional padding applied to the host margin.
+    /// </summary>
+    public Thickness HostPadding
+    {
+        get => (Thickness)GetValue(HostPaddingProperty);
+        set => SetValue(HostPaddingProperty, value);
+    }
+
+    /// <summary>
+    /// Identifies the <see cref="NotificationWidth"/> dependency property.
+    /// </summary>
+    public static readonly DependencyProperty NotificationWidthProperty =
+        DependencyProperty.Register(
+            nameof(NotificationWidth),
+            typeof(double),
+            typeof(NotificationHost),
+            new PropertyMetadata(0d));
+
+    /// <summary>
+    /// Gets or sets the width used for notification bars.
+    /// </summary>
+    public double NotificationWidth
+    {
+        get => (double)GetValue(NotificationWidthProperty);
+        set => SetValue(NotificationWidthProperty, value);
+    }
+
+    /// <summary>
+    /// Identifies the <see cref="NotificationMaxWidth"/> dependency property.
+    /// </summary>
+    public static readonly DependencyProperty NotificationMaxWidthProperty =
+        DependencyProperty.Register(
+            nameof(NotificationMaxWidth),
+            typeof(double),
+            typeof(NotificationHost),
+            new PropertyMetadata(0d));
+
+    /// <summary>
+    /// Gets or sets the default maximum width used when a request does not specify a max width.
+    /// Set to 0 to disable.
+    /// </summary>
+    public double NotificationMaxWidth
+    {
+        get => (double)GetValue(NotificationMaxWidthProperty);
+        set => SetValue(NotificationMaxWidthProperty, value);
+    }
+
     internal VerticalAlignment HostVerticalAlignment
         => HostPosition == NotificationHostPosition.Top ? VerticalAlignment.Top : VerticalAlignment.Bottom;
 
     internal Thickness HostMargin
-        => HostPosition == NotificationHostPosition.Top ? new Thickness(0, 24, 0, 0) : new Thickness(0, 0, 0, 24);
+        => AddThickness(
+            HostPosition == NotificationHostPosition.Top ? new Thickness(0, 24, 0, 0) : new Thickness(0, 0, 0, 24),
+            HostPadding);
 
     private readonly SemaphoreSlim _transitionGate = new(1, 1);
     private sealed class NotificationVisual
@@ -81,6 +236,7 @@ public sealed partial class NotificationHost : UserControl
         public Button ActionButton { get; }
         public CancellationTokenSource? DismissCts { get; set; }
         public Action? Action { get; set; }
+        public Func<Task>? ActionAsync { get; set; }
         public string? ActionText { get; set; }
         public ICommand? ActionCommand { get; set; }
         public object? ActionCommandParameter { get; set; }
@@ -105,6 +261,17 @@ public sealed partial class NotificationHost : UserControl
         }
     }
 
+    private static void OnHostLayoutChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+    {
+        if (d is NotificationHost host)
+        {
+            host.Bindings.Update();
+        }
+    }
+
+    private static Thickness AddThickness(Thickness a, Thickness b)
+        => new(a.Left + b.Left, a.Top + b.Top, a.Right + b.Right, a.Bottom + b.Bottom);
+
     /// <summary>
     /// Displays a notification request within this host.
     /// </summary>
@@ -117,6 +284,25 @@ public sealed partial class NotificationHost : UserControl
         {
             if (request.IsUpdate && request.DismissRequested)
             {
+                if (request.Id == Guid.Empty)
+                {
+                    foreach (var id in new List<Guid>(_visuals.Keys))
+                    {
+                        if (_visuals.TryGetValue(id, out var dv))
+                        {
+                            dv.DismissCts?.Cancel();
+                            dv.DismissCts?.Dispose();
+                            dv.DismissCts = null;
+                            await AnimateOut(dv, request.Transition);
+                            Stack.Children.Remove(dv.Container);
+                            _visuals.Remove(id);
+                        }
+                    }
+
+                    Overlay.IsHitTestVisible = _visuals.Count > 0;
+                    return;
+                }
+
                 if (_visuals.TryGetValue(request.Id, out var dismissVisual))
                 {
                     dismissVisual.DismissCts?.Cancel();
@@ -130,6 +316,44 @@ public sealed partial class NotificationHost : UserControl
                     Overlay.IsHitTestVisible = _visuals.Count > 0;
                 }
                 return;
+            }
+
+            // Apply per-host defaults when values are not explicitly set.
+            var effectiveTransition = request.Transition;
+            var effectiveMaterial = request.Material;
+            var effectiveDuration = request.DurationMs;
+
+            if (!request.IsUpdate)
+            {
+                if (effectiveDuration == 3000 && DefaultDurationMs != 3000)
+                {
+                    effectiveDuration = DefaultDurationMs;
+                }
+            }
+
+            var effectiveRequest = request;
+            if (effectiveTransition != request.Transition || effectiveMaterial != request.Material || effectiveDuration != request.DurationMs)
+            {
+                effectiveRequest = new NotificationRequest
+                {
+                    Id = request.Id,
+                    Message = request.Message,
+                    Level = request.Level,
+                    DurationMs = effectiveDuration,
+                    IsClosable = request.IsClosable,
+                    DismissRequested = request.DismissRequested,
+                    ActionText = request.ActionText,
+                    Action = request.Action,
+                    ActionCommand = request.ActionCommand,
+                    ActionAsync = request.ActionAsync,
+                    ActionCommandParameter = request.ActionCommandParameter,
+                    IsInProgress = request.IsInProgress,
+                    Progress = request.Progress,
+                    Transition = effectiveTransition,
+                    Material = effectiveMaterial,
+                    MaxWidth = request.MaxWidth,
+                    IsUpdate = request.IsUpdate
+                };
             }
 
             if (!_visuals.TryGetValue(request.Id, out var visual))
@@ -147,23 +371,23 @@ public sealed partial class NotificationHost : UserControl
                 }
 
                 // If the first request for a given Id is an update, we still need to show the visual.
-                if (request.IsUpdate)
+                if (effectiveRequest.IsUpdate)
                 {
-                    ApplyRequestToVisual(visual, request);
-                    await AnimateIn(visual, request.Transition);
-                    RestartDismissTimer(visual, request);
+                    ApplyRequestToVisual(visual, effectiveRequest);
+                    await AnimateIn(visual, effectiveRequest.Transition);
+                    RestartDismissTimer(visual, effectiveRequest);
                     return;
                 }
             }
 
-            ApplyRequestToVisual(visual, request);
+            ApplyRequestToVisual(visual, effectiveRequest);
 
-            if (!request.IsUpdate)
+            if (!effectiveRequest.IsUpdate)
             {
-                await AnimateIn(visual, request.Transition);
+                await AnimateIn(visual, effectiveRequest.Transition);
             }
 
-            RestartDismissTimer(visual, request);
+            RestartDismissTimer(visual, effectiveRequest);
         }
         finally
         {
@@ -187,10 +411,15 @@ public sealed partial class NotificationHost : UserControl
         {
             IsOpen = true,
             IsClosable = true,
-            Width = 420,
+            Width = NotificationWidth > 0 ? NotificationWidth : double.NaN,
             CornerRadius = new CornerRadius(6),
             IsHitTestVisible = true
         };
+
+        if (NotificationMaxWidth > 0)
+        {
+            bar.MaxWidth = NotificationMaxWidth;
+        }
 
         var message = new TextBlock { TextWrapping = TextWrapping.Wrap };
         var progress = new ProgressBar
@@ -208,7 +437,7 @@ public sealed partial class NotificationHost : UserControl
             MinWidth = 80
         };
 
-        actionButton.Click += (_, __) =>
+        actionButton.Click += async (_, __) =>
         {
             try
             {
@@ -221,6 +450,10 @@ public sealed partial class NotificationHost : UserControl
                     {
                         command.Execute(parameter);
                     }
+                }
+                else if (actionButton.Tag is Func<Task> asyncAction)
+                {
+                    await asyncAction().ConfigureAwait(true);
                 }
                 else if (actionButton.Tag is Action action)
                 {
@@ -268,6 +501,19 @@ public sealed partial class NotificationHost : UserControl
         ApplyLevel(visual, request.Level);
         ApplyMaterial(visual, request.Material);
 
+        if (request.MaxWidth is double maxWidth)
+        {
+            visual.Bar.MaxWidth = maxWidth;
+        }
+        else if (NotificationMaxWidth > 0)
+        {
+            visual.Bar.MaxWidth = NotificationMaxWidth;
+        }
+        else
+        {
+            visual.Bar.ClearValue(FrameworkElement.MaxWidthProperty);
+        }
+
         if (!string.IsNullOrWhiteSpace(request.Message))
         {
             visual.MessageText.Text = request.Message;
@@ -297,13 +543,14 @@ public sealed partial class NotificationHost : UserControl
         }
 
         // Sticky action: if an update doesn't specify action fields, keep the previous action configuration.
-        var hasActionUpdate = request.ActionText is not null || request.ActionCommand is not null || request.Action is not null || request.ActionCommandParameter is not null;
+        var hasActionUpdate = request.ActionText is not null || request.ActionCommand is not null || request.ActionAsync is not null || request.Action is not null || request.ActionCommandParameter is not null;
         if (!request.IsUpdate || hasActionUpdate)
         {
-            if (!string.IsNullOrWhiteSpace(request.ActionText) && (request.ActionCommand is not null || request.Action is not null))
+            if (!string.IsNullOrWhiteSpace(request.ActionText) && (request.ActionCommand is not null || request.ActionAsync is not null || request.Action is not null))
             {
                 visual.ActionText = request.ActionText;
                 visual.Action = request.Action;
+                visual.ActionAsync = request.ActionAsync;
                 visual.ActionCommand = request.ActionCommand;
                 visual.ActionCommandParameter = request.ActionCommandParameter;
             }
@@ -311,17 +558,18 @@ public sealed partial class NotificationHost : UserControl
             {
                 visual.ActionText = null;
                 visual.Action = null;
+                visual.ActionAsync = null;
                 visual.ActionCommand = null;
                 visual.ActionCommandParameter = null;
             }
         }
 
-        if (!string.IsNullOrWhiteSpace(visual.ActionText) && (visual.ActionCommand is not null || visual.Action is not null))
+        if (!string.IsNullOrWhiteSpace(visual.ActionText) && (visual.ActionCommand is not null || visual.ActionAsync is not null || visual.Action is not null))
         {
             visual.ActionButton.Content = visual.ActionText;
             visual.ActionButton.Command = visual.ActionCommand;
             visual.ActionButton.CommandParameter = visual.ActionCommandParameter;
-            visual.ActionButton.Tag = visual.Action;
+            visual.ActionButton.Tag = (object?)visual.ActionAsync ?? visual.Action;
             if (visual.ActionButton.Visibility != Visibility.Visible)
             {
                 visual.ActionButton.Opacity = 0;
