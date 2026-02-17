@@ -1,33 +1,25 @@
-﻿using FireFenyx.WinUI.Notifications.Models;
-using FireFenyx.WinUI.Notifications.Services;
-using FureFenyx.WinUI.Notifications.SampleApp.Services;
+﻿using System;
+using System.Threading;
+using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using FireFenyx.WinUI.Notifications.Models;
+using FireFenyx.WinUI.Notifications.SampleApp.Services;
+using FireFenyx.WinUI.Notifications.Services;
+using FireFenyx.WinUI.Notifications.SampleApp;
 using Microsoft.Extensions.DependencyInjection;
-using System;
-using System.Collections.Generic;
-using System.Text;
-using System.Threading.Tasks;
-using System.Threading;
 
-namespace FureFenyx.WinUI.Notifications.SampleApp.ViewModels;
+namespace FireFenyx.WinUI.Notifications.SampleApp.ViewModels;
 
 public partial class MainViewModel : ObservableObject
 {
-    public INotificationQueue NotificationQueue { get; }
-    private readonly INotificationService _notifications;
-    private readonly IDialogService _dialogs;
+    public INotificationQueue NotificationQueue { get; } = App.Services.GetRequiredService<INotificationQueue>();
+    private readonly INotificationService _notifications = App.Services.GetRequiredService<INotificationService>();
+    private readonly IDialogService _dialogs = App.Services.GetRequiredService<IDialogService>();
     private IPersistentNotification? _persistent;
 
     private CancellationTokenSource? _sendCts;
     private volatile bool _sendPaused;
-
-    public MainViewModel()
-    {
-        NotificationQueue = App.Services.GetRequiredService<INotificationQueue>();
-        _notifications = App.Services.GetRequiredService<INotificationService>();
-        _dialogs = App.Services.GetRequiredService<IDialogService>();
-    }
 
     public void ShowSuccess()
         => _notifications.Success("Operation completed successfully!");
@@ -76,7 +68,7 @@ public partial class MainViewModel : ObservableObject
             ActionCommandParameter = id
         });
 
-        _ = Task.Run(async () =>
+        _ = Task.Run((Func<Task?>)(async () =>
         {
             try
             {
@@ -109,7 +101,7 @@ public partial class MainViewModel : ObservableObject
                     DurationMs = 2000
                 });
             }
-        });
+        }));
     }
 
     [RelayCommand]

@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Application
-    x:Class="FureFenyx.WinUI.Notifications.SampleApp.App"
+    x:Class="FireFenyx.WinUI.Notifications.SampleApp.App"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:local="using:FureFenyx.WinUI.Notifications.SampleApp">
+    xmlns:local="using:FireFenyx.WinUI.Notifications.SampleApp">
     <Application.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>

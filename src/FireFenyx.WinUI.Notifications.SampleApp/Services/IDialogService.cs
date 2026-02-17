@@ -1,6 +1,6 @@
 using System.Threading.Tasks;
 
-namespace FureFenyx.WinUI.Notifications.SampleApp.Services;
+namespace FireFenyx.WinUI.Notifications.SampleApp.Services;
 
 public interface IDialogService
 {

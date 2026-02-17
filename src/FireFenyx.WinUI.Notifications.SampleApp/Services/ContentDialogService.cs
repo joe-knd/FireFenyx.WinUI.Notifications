@@ -4,20 +4,13 @@ using System;
 using System.Threading.Tasks;
 using Windows.Foundation;
 
-namespace FureFenyx.WinUI.Notifications.SampleApp.Services;
+namespace FireFenyx.WinUI.Notifications.SampleApp.Services;
 
-public sealed class ContentDialogService : IDialogService
+public sealed class ContentDialogService(Func<Window?> windowAccessor) : IDialogService
 {
-    private readonly Func<Window?> _windowAccessor;
-
-    public ContentDialogService(Func<Window?> windowAccessor)
-    {
-        _windowAccessor = windowAccessor;
-    }
-
     public async Task<bool> ConfirmAsync(string title, string message, string confirmText = "Yes", string cancelText = "No")
     {
-        var window = _windowAccessor();
+        var window = windowAccessor();
         if (window?.Content is not FrameworkElement root)
         {
             return false;

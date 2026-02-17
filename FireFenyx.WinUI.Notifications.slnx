@@ -1,4 +1,7 @@
 <Solution>
+  <Project Path="src/FireFenyx.WinUI.Notifications.SampleApp/FireFenyx.WinUI.Notifications.SampleApp.csproj">
+    <Platform Project="x64" />
+  </Project>
   <Project Path="src/FireFenyx.WinUI.Notifications/FireFenyx.WinUI.Notifications.csproj" Id="558a2658-c9af-4619-bcf4-ace8d0b45d15" />
   <Project Path="tests/FireFenyx.WinUI.Notifications.Tests/FireFenyx.WinUI.Notifications.Tests.csproj" />
 </Solution>
