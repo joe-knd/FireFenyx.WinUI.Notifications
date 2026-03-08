@@ -101,7 +101,7 @@ public partial class MainViewModel : ObservableObject
                     await Task.Delay(150, token);
                 }
 
-                _notifications.Update(new NotificationRequest { Id = id, IsInProgress = false, Progress = 100, Level = NotificationLevel.Success, Message = "File sent successfully!", DurationMs = 2000 });
+                _notifications.Update(new NotificationRequest { Id = id, IsInProgress = false, Progress = 100, Level = NotificationLevel.Success, Message = "File sent successfully!", DurationMs = 2000, ActionText = "" });
             }
             catch (OperationCanceledException)
             {
@@ -111,7 +111,8 @@ public partial class MainViewModel : ObservableObject
                     IsInProgress = false,
                     Level = NotificationLevel.Warning,
                     Message = "Send canceled.",
-                    DurationMs = 2000
+                    DurationMs = 2000,
+                    ActionText = ""
                 });
             }
         }));

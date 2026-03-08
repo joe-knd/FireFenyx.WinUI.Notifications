@@ -3,5 +3,15 @@
     <TargetFramework>net10.0</TargetFramework>
     <RootNamespace>FireFenyx.Notifications</RootNamespace>
     <Nullable>enable</Nullable>
+
+    <!-- NuGet package -->
+    <IsPackable>true</IsPackable>
+    <PackageId>FireFenyx.Notifications.Abstractions</PackageId>
+    <Description>Shared models, interfaces, and service implementation for FireFenyx in-app notifications (WPF and WinUI 3).</Description>
+    <PackageTags>notifications;abstractions;toast;snackbar;wpf;winui</PackageTags>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
+  <ItemGroup>
+    <None Include="..\..\README.md" Pack="true" PackagePath="\" />
+  </ItemGroup>
 </Project>

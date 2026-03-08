@@ -266,6 +266,35 @@ public sealed partial class NotificationHost : UserControl
 
     private readonly Dictionary<Guid, NotificationVisual> _visuals = new();
 
+    private sealed class NotificationActionCommand(Action<object?> execute) : ICommand
+    {
+        public event EventHandler? CanExecuteChanged { add { } remove { } }
+        public bool CanExecute(object? parameter) => true;
+        public void Execute(object? parameter) => execute(parameter);
+    }
+
+    private static ICommand CreateCallbackCommand(Func<Task>? asyncAction, Action? action)
+    {
+        if (asyncAction is not null)
+        {
+            var captured = asyncAction;
+            return new NotificationActionCommand(_ => _ = RunSafeAsync(captured));
+        }
+
+        var capturedAction = action!;
+        return new NotificationActionCommand(_ =>
+        {
+            try { capturedAction(); }
+            catch { /* Intentionally ignore exceptions from consumer code. */ }
+        });
+    }
+
+    private static async Task RunSafeAsync(Func<Task> action)
+    {
+        try { await action().ConfigureAwait(true); }
+        catch { /* Intentionally ignore exceptions from consumer code. */ }
+    }
+
     /// <summary>
     /// Initializes a new instance of the <see cref="NotificationHost"/> control.
     /// </summary>
@@ -581,39 +610,12 @@ public sealed partial class NotificationHost : UserControl
         };
         if (Application.Current?.TryFindResource("NotificationCloseButtonStyle") is Style closeStyle)
             closeButton.Style = closeStyle;
-        closeButton.Click += (_, _) => CloseClicked(id);
+        closeButton.Command = new NotificationActionCommand(_ => CloseClicked(id));
         Grid.SetColumn(closeButton, 2);
         mainGrid.Children.Add(closeButton);
 
         border.Child = mainGrid;
         container.Children.Add(border);
-
-        actionButton.Click += async (_, _) =>
-        {
-            try
-            {
-                if (actionButton.Command is ICommand command)
-                {
-                    var parameter = actionButton.CommandParameter;
-                    if (command.CanExecute(parameter))
-                    {
-                        command.Execute(parameter);
-                    }
-                }
-                else if (actionButton.Tag is Func<Task> asyncAction)
-                {
-                    await asyncAction().ConfigureAwait(true);
-                }
-                else if (actionButton.Tag is Action action)
-                {
-                    action();
-                }
-            }
-            catch
-            {
-                // Intentionally ignore exceptions from consumer code.
-            }
-        };
 
         return new NotificationVisual(id, container, border, accentRect, iconText, messageText, progressBar, actionButton, closeButton);
     }
@@ -694,9 +696,16 @@ public sealed partial class NotificationHost : UserControl
         if (!string.IsNullOrWhiteSpace(visual.ActionText) && (visual.ActionCommand is not null || visual.ActionAsync is not null || visual.Action is not null))
         {
             visual.ActionButton.Content = visual.ActionText;
-            visual.ActionButton.Command = visual.ActionCommand;
-            visual.ActionButton.CommandParameter = visual.ActionCommandParameter;
-            visual.ActionButton.Tag = (object?)visual.ActionAsync ?? visual.Action;
+            if (visual.ActionCommand is not null)
+            {
+                visual.ActionButton.Command = visual.ActionCommand;
+                visual.ActionButton.CommandParameter = visual.ActionCommandParameter;
+            }
+            else
+            {
+                visual.ActionButton.Command = CreateCallbackCommand(visual.ActionAsync, visual.Action);
+                visual.ActionButton.CommandParameter = null;
+            }
             if (visual.ActionButton.Visibility != Visibility.Visible)
             {
                 visual.ActionButton.Opacity = 0;
@@ -708,7 +717,6 @@ public sealed partial class NotificationHost : UserControl
         {
             visual.ActionButton.Command = null;
             visual.ActionButton.CommandParameter = null;
-            visual.ActionButton.Tag = null;
             if (visual.ActionButton.Visibility == Visibility.Visible)
             {
                 _ = HideWithFadeAsync(visual.ActionButton);

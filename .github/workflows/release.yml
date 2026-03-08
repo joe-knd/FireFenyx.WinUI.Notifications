@@ -1,0 +1,51 @@
+name: Release to NuGet
+
+on:
+  push:
+    tags: [ 'v*' ]   # e.g. v1.0.0, v1.2.3-preview.1
+
+jobs:
+  pack-and-publish:
+    runs-on: windows-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Setup .NET 10
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '10.0.x'
+        dotnet-quality: 'preview'
+
+    - name: Extract version from tag
+      id: version
+      shell: pwsh
+      run: |
+        $tag = "${{ github.ref_name }}"       # e.g. v1.0.0
+        $ver = $tag -replace '^v', ''          # e.g. 1.0.0
+        echo "VERSION=$ver" >> $env:GITHUB_OUTPUT
+        echo "📦 Version: $ver"
+
+    - name: Restore
+      run: dotnet restore
+
+    - name: Build
+      run: dotnet build --no-restore --configuration Release /p:Version=${{ steps.version.outputs.VERSION }}
+
+    - name: Test
+      run: dotnet test --no-build --configuration Release --verbosity normal
+
+    - name: Pack
+      run: |
+        dotnet pack src/FireFenyx.Notifications.Abstractions/FireFenyx.Notifications.Abstractions.csproj --no-build --configuration Release /p:Version=${{ steps.version.outputs.VERSION }} --output ./artifacts
+        dotnet pack src/FireFenyx.Wpf.Notifications/FireFenyx.Wpf.Notifications.csproj --no-build --configuration Release /p:Version=${{ steps.version.outputs.VERSION }} --output ./artifacts
+        dotnet pack src/FireFenyx.WinUI.Notifications/FireFenyx.WinUI.Notifications.csproj --no-build --configuration Release /p:Version=${{ steps.version.outputs.VERSION }} --output ./artifacts
+
+    - name: Push to NuGet.org
+      run: dotnet nuget push ./artifacts/*.nupkg --api-key ${{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json --skip-duplicate
+
+    - name: Create GitHub Release
+      uses: softprops/action-gh-release@v2
+      with:
+        generate_release_notes: true
+        files: ./artifacts/*.nupkg
