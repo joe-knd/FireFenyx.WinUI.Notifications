@@ -1,4 +1,4 @@
-﻿<Solution>
+<Solution>
   <Folder Name="/Shared/">
     <Project Path="src/FireFenyx.Notifications.Abstractions/FireFenyx.Notifications.Abstractions.csproj" />
     <Project Path="src/FireFenyx.Notifications.SampleApp.Shared/FireFenyx.Notifications.SampleApp.Shared.csproj" />
@@ -13,5 +13,6 @@
   <Folder Name="/WPF/">
     <Project Path="src/FireFenyx.Wpf.Notifications.SampleApp/FireFenyx.Wpf.Notifications.SampleApp.csproj" />
     <Project Path="src/FireFenyx.Wpf.Notifications/FireFenyx.Wpf.Notifications.csproj" />
+    <Project Path="tests/FireFenyx.Wpf.Notifications.Tests/FireFenyx.Wpf.Notifications.Tests.csproj" />
   </Folder>
 </Solution>

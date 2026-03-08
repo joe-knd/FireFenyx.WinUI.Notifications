@@ -3,7 +3,8 @@
 Toast-style in-app notification library for **WPF** and **WinUI 3** with animated transitions, progress tracking, persistent notifications, and two built-in visual styles.
 
 [![CI](https://github.com/joe-knd/FireFenyx.WinUI.Notifications/actions/workflows/ci.yml/badge.svg)](https://github.com/joe-knd/FireFenyx.WinUI.Notifications/actions/workflows/ci.yml)
-[![NuGet](https://img.shields.io/nuget/v/FireFenyx.WinUI.Notifications.svg)](https://www.nuget.org/packages/FireFenyx.WinUI.Notifications)
+[![NuGet WinUI](https://img.shields.io/nuget/v/FireFenyx.WinUI.Notifications.svg?label=WinUI)](https://www.nuget.org/packages/FireFenyx.WinUI.Notifications)
+[![NuGet WPF](https://img.shields.io/nuget/v/FireFenyx.Wpf.Notifications.svg?label=WPF)](https://www.nuget.org/packages/FireFenyx.Wpf.Notifications)
 [![NuGet Downloads](https://img.shields.io/nuget/dt/FireFenyx.WinUI.Notifications.svg)](https://www.nuget.org/packages/FireFenyx.WinUI.Notifications)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 ![.NET 10](https://img.shields.io/badge/.NET-10-purple)
@@ -53,12 +54,14 @@ A colored accent strip on the leading edge with a material background.
 ## Solution Structure
 
 ```
-FireFenyx.Notifications.Abstractions   → Shared models, interfaces, service implementation (net10.0)
-FireFenyx.Wpf.Notifications           → WPF control + queue (net10.0-windows)
-FireFenyx.WinUI.Notifications         → WinUI 3 control + queue (net10.0-windows10.0.22621.0)
+FireFenyx.Notifications.Abstractions      → Shared models, interfaces, service implementation (net10.0)
+FireFenyx.Wpf.Notifications              → WPF control + queue (net10.0-windows)
+FireFenyx.WinUI.Notifications            → WinUI 3 control + queue (net10.0-windows10.0.22621.0)
 FireFenyx.Notifications.SampleApp.Shared → Shared ViewModel + IDialogService (net10.0)
-FireFenyx.Wpf.Notifications.SampleApp → WPF sample app
-FireFenyx.WinUI.Notifications.SampleApp → WinUI 3 sample app
+FireFenyx.Wpf.Notifications.SampleApp    → WPF sample app
+FireFenyx.WinUI.Notifications.SampleApp  → WinUI 3 sample app
+FireFenyx.Wpf.Notifications.Tests        → WPF unit tests (xUnit)
+FireFenyx.WinUI.Notifications.Tests      → WinUI unit tests (xUnit)
 ```
 
 ---
@@ -160,7 +163,7 @@ _notifications.Show(new NotificationRequest
 | Property | Type | Default | Description |
 |---|---|---|---|
 | `HostPosition` | `Top` / `Bottom` | `Bottom` | Where notifications stack |
-| `BarStyle` | `Fluent` / `AccentStrip` | `Fluent` | Visual style |
+| `BarStyle` | `Fluent` / `AccentStrip` | `Fluent` (WinUI) / `AccentStrip` (WPF) | Visual style |
 | `DefaultDurationMs` | `int` | `3000` | Auto-dismiss duration (ms) |
 | `DefaultTransition` | `SlideUp` / `Fade` / `Scale` / `SlideAndFade` | `SlideAndFade` | Animation |
 | `DefaultMaterial` | `Solid` / `Acrylic` / `Mica` | `Acrylic` | Background material |

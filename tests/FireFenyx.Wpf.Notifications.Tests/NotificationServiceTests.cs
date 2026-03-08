@@ -4,7 +4,7 @@ using System;
 using System.Collections.Generic;
 using Xunit;
 
-namespace FireFenyx.WinUI.Notifications.Tests;
+namespace FireFenyx.Wpf.Notifications.Tests;
 
 public sealed class NotificationServiceTests
 {

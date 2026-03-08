@@ -1,0 +1,6 @@
+<Project>
+  <!-- Include the package icon for all packable projects (evaluated after .csproj so IsPackable is available) -->
+  <ItemGroup Condition="'$(IsPackable)' == 'true'">
+    <None Include="$(MSBuildThisFileDirectory)icon.png" Pack="true" PackagePath="\" />
+  </ItemGroup>
+</Project>

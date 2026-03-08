@@ -2,12 +2,13 @@
   <PropertyGroup>
     <Company>FireFenyx</Company>
     <Authors>Jose Valencia</Authors>
-    <Copyright>Copyright © 2025 Jose Valencia</Copyright>
+    <Copyright>Copyright © 2026 Jose Valencia</Copyright>
     <RepositoryUrl>https://github.com/joe-knd/FireFenyx.WinUI.Notifications</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <PackageProjectUrl>https://github.com/joe-knd/FireFenyx.WinUI.Notifications</PackageProjectUrl>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
+    <PackageIcon>icon.png</PackageIcon>
 
     <!-- Version is overridden by CI from git tags (e.g. v1.0.0 → /p:Version=1.0.0) -->
     <Version>1.0.0</Version>

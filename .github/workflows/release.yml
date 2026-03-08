@@ -4,6 +4,9 @@ on:
   push:
     tags: [ 'v*' ]   # e.g. v1.0.0, v1.2.3-preview.1
 
+permissions:
+  contents: write        # needed by softprops/action-gh-release
+
 jobs:
   pack-and-publish:
     runs-on: windows-latest
@@ -15,34 +18,48 @@ jobs:
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: '10.0.x'
-        dotnet-quality: 'preview'
 
     - name: Extract version from tag
       id: version
       shell: pwsh
       run: |
-        $tag = "${{ github.ref_name }}"       # e.g. v1.0.0
-        $ver = $tag -replace '^v', ''          # e.g. 1.0.0
+        $tag = "${{ github.ref_name }}"
+        $ver = $tag -replace '^v', ''
         echo "VERSION=$ver" >> $env:GITHUB_OUTPUT
-        echo "📦 Version: $ver"
+        echo "Version: $ver"
 
     - name: Restore
       run: dotnet restore
 
     - name: Build
-      run: dotnet build --no-restore --configuration Release /p:Version=${{ steps.version.outputs.VERSION }}
+      run: dotnet build --configuration Release -p:Version=${{ steps.version.outputs.VERSION }}
 
     - name: Test
       run: dotnet test --no-build --configuration Release --verbosity normal
 
     - name: Pack
+      shell: pwsh
       run: |
-        dotnet pack src/FireFenyx.Notifications.Abstractions/FireFenyx.Notifications.Abstractions.csproj --no-build --configuration Release /p:Version=${{ steps.version.outputs.VERSION }} --output ./artifacts
-        dotnet pack src/FireFenyx.Wpf.Notifications/FireFenyx.Wpf.Notifications.csproj --no-build --configuration Release /p:Version=${{ steps.version.outputs.VERSION }} --output ./artifacts
-        dotnet pack src/FireFenyx.WinUI.Notifications/FireFenyx.WinUI.Notifications.csproj --no-build --configuration Release /p:Version=${{ steps.version.outputs.VERSION }} --output ./artifacts
+        $version = "${{ steps.version.outputs.VERSION }}"
+        $projects = @(
+          "src/FireFenyx.Notifications.Abstractions/FireFenyx.Notifications.Abstractions.csproj",
+          "src/FireFenyx.Wpf.Notifications/FireFenyx.Wpf.Notifications.csproj",
+          "src/FireFenyx.WinUI.Notifications/FireFenyx.WinUI.Notifications.csproj"
+        )
+        foreach ($proj in $projects) {
+          dotnet pack $proj --configuration Release -p:Version=$version --output ./artifacts
+          if ($LASTEXITCODE -ne 0) { throw "Pack failed for $proj" }
+        }
+        Get-ChildItem ./artifacts -Filter *.nupkg | ForEach-Object { Write-Host "  $_" }
 
     - name: Push to NuGet.org
-      run: dotnet nuget push ./artifacts/*.nupkg --api-key ${{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json --skip-duplicate
+      shell: pwsh
+      run: |
+        foreach ($pkg in (Get-ChildItem ./artifacts -Filter *.nupkg)) {
+          Write-Host "Pushing $($pkg.Name)..."
+          dotnet nuget push $pkg.FullName --api-key ${{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json --skip-duplicate
+          if ($LASTEXITCODE -ne 0) { throw "Push failed for $($pkg.Name)" }
+        }
 
     - name: Create GitHub Release
       uses: softprops/action-gh-release@v2
