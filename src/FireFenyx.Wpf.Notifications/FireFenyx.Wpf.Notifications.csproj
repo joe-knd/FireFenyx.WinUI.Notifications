@@ -8,7 +8,7 @@
     <!-- NuGet package -->
     <IsPackable>true</IsPackable>
     <PackageId>FireFenyx.Wpf.Notifications</PackageId>
-    <Description>In-app toast-style notification host and service for WPF � animated transitions, progress tracking, persistent notifications, Fluent and AccentStrip styles.</Description>
+    <Description>In-app toast-style notification host and service for WPF - animated transitions, progress tracking, persistent notifications, Fluent and AccentStrip styles.</Description>
     <PackageTags>wpf;notifications;toast;snackbar;infobar</PackageTags>
     <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
