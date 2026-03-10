@@ -12,7 +12,7 @@
     <!-- NuGet package -->
     <IsPackable>true</IsPackable>
     <PackageId>FireFenyx.WinUI.Notifications</PackageId>
-    <Description>In-app toast-style notification host and service for WinUI 3 — animated transitions, progress tracking, persistent notifications, Fluent and AccentStrip styles.</Description>
+    <Description>In-app toast-style notification host and service for WinUI 3 ï¿½ animated transitions, progress tracking, persistent notifications, Fluent and AccentStrip styles.</Description>
     <PackageTags>winui;notifications;toast;snackbar;infobar</PackageTags>
     <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
@@ -29,7 +29,15 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.Windows.SDK.BuildTools" Version="10.0.26100.7463" />
     <PackageReference Include="Microsoft.WindowsAppSDK" Version="1.8.251106002" />
+  </ItemGroup>
+  <ItemGroup Condition="$(TargetFramework.StartsWith('net8.'))">
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.1" />
+  </ItemGroup>
+  <ItemGroup Condition="$(TargetFramework.StartsWith('net9.'))">
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="9.0.0" />
+  </ItemGroup>
+  <ItemGroup Condition="$(TargetFramework.StartsWith('net10.'))">
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.0" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\FireFenyx.Notifications.Abstractions\FireFenyx.Notifications.Abstractions.csproj" />
