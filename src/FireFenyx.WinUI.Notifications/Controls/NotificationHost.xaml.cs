@@ -229,14 +229,6 @@ public sealed partial class NotificationHost : UserControl
         set => SetValue(BarStyleProperty, value);
     }
 
-    internal VerticalAlignment HostVerticalAlignment
-        => HostPosition == NotificationHostPosition.Top ? VerticalAlignment.Top : VerticalAlignment.Bottom;
-
-    internal Thickness HostMargin
-        => AddThickness(
-            HostPosition == NotificationHostPosition.Top ? new Thickness(0, 24, 0, 0) : new Thickness(0, 0, 0, 24),
-            HostPadding);
-
     private readonly SemaphoreSlim _transitionGate = new(1, 1);
     private sealed class NotificationVisual
     {
@@ -302,6 +294,7 @@ public sealed partial class NotificationHost : UserControl
     public NotificationHost()
     {
         InitializeComponent();
+        ApplyLayout();
         Loaded += OnLoaded;
     }
 
@@ -316,12 +309,28 @@ public sealed partial class NotificationHost : UserControl
         }
     }
 
+    private void ApplyLayout()
+    {
+        if (Stack is null) return;
+
+        Stack.HorizontalAlignment = HostHorizontalAlignment;
+        Stack.VerticalAlignment = HostPosition == NotificationHostPosition.Top
+            ? VerticalAlignment.Top
+            : VerticalAlignment.Bottom;
+        Stack.Spacing = HostSpacing;
+
+        var baseMargin = HostPosition == NotificationHostPosition.Top
+            ? new Thickness(0, 24, 0, 0)
+            : new Thickness(0, 0, 0, 24);
+
+        Stack.Margin = AddThickness(baseMargin, HostPadding);
+    }
+
     private static void OnHostPositionChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
         if (d is NotificationHost host)
         {
-            // Force x:Bind reevaluation.
-            host.Bindings.Update();
+            host.ApplyLayout();
         }
     }
 
@@ -329,7 +338,7 @@ public sealed partial class NotificationHost : UserControl
     {
         if (d is NotificationHost host)
         {
-            host.Bindings.Update();
+            host.ApplyLayout();
         }
     }
 

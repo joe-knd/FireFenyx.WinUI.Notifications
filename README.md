@@ -7,6 +7,8 @@ Toast-style in-app notification library for **WPF** and **WinUI 3** with animate
 [![NuGet WPF](https://img.shields.io/nuget/v/FireFenyx.Wpf.Notifications.svg?label=WPF)](https://www.nuget.org/packages/FireFenyx.Wpf.Notifications)
 [![NuGet Abstractions](https://img.shields.io/nuget/v/FireFenyx.Notifications.Abstractions.svg?label=Abstractions)](https://www.nuget.org/packages/FireFenyx.Notifications.Abstractions)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+![.NET 8](https://img.shields.io/badge/.NET-8-blue)
+![.NET 9](https://img.shields.io/badge/.NET-9-blue)
 ![.NET 10](https://img.shields.io/badge/.NET-10-purple)
 
 ---
@@ -175,8 +177,10 @@ _notifications.Show(new NotificationRequest
 
 ## Requirements
 
-- .NET 10
+- .NET 8, .NET 9, or .NET 10
 - Windows App SDK 1.8+ (WinUI)
+
+> **Note:** The sample apps and unit tests target .NET 10 and require the .NET 10 SDK to build and run.
 
 ## License
 

@@ -17,10 +17,6 @@
     <Grid x:Name="Overlay" IsHitTestVisible="False">
 
         <StackPanel
-            x:Name="Stack"
-            Margin="{x:Bind HostMargin, Mode=OneWay}"
-            HorizontalAlignment="{x:Bind HostHorizontalAlignment, Mode=OneWay}"
-            VerticalAlignment="{x:Bind HostVerticalAlignment, Mode=OneWay}"
-            Spacing="{x:Bind HostSpacing, Mode=OneWay}" />
+            x:Name="Stack" />
     </Grid>
 </UserControl>
